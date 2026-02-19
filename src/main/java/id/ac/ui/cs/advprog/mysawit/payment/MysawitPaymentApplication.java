@@ -1,13 +1,13 @@
-package id.ac.ui.cs.advprog.mysawit.auth;
+package id.ac.ui.cs.advprog.mysawit.payment;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MysawitAuthApplication {
+public class MysawitPaymentApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MysawitAuthApplication.class, args);
+        SpringApplication.run(MysawitPaymentApplication.class, args);
     }
 
 }
