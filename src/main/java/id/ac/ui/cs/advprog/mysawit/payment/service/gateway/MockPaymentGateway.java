@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.mysawit.payment.service;
+package id.ac.ui.cs.advprog.mysawit.payment.service.gateway;
 
 import org.springframework.stereotype.Service;
 
