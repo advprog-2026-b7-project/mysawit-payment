@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "staging"]
 
 jobs:
   build:
@@ -26,32 +26,28 @@ jobs:
       - name: Grant Execute Permission
         run: chmod +x gradlew
 
-      - name: Build Project
-        run: ./gradlew clean build -x test
+      - name: Build and Test
+        run: ./gradlew clean build
 
-      - name: Run Checkstyle (Linter)
-        run: ./gradlew checkstyleMain checkstyleTest
-
-      - name: Run Unit Tests
-        run: ./gradlew test
-
-      - name: Generate Code Coverage Report
+      - name: Generate Jacoco Report
         run: ./gradlew jacocoTestReport
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@v3
         with:
           args: >
-            -Dsonar.projectKey=advprog-2026-b7-project_mysawit-auth
+            -Dsonar.projectKey=advprog-2026-b7-project_mysawit-payment
             -Dsonar.organization=adpro-kelompok-b7
-            -Dsonar.java.binaries=build/classes
+            -Dsonar.sources=src/main/java
+            -Dsonar.tests=src/test/java
+            -Dsonar.java.binaries=build/classes/java/main
             -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_KEY }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
