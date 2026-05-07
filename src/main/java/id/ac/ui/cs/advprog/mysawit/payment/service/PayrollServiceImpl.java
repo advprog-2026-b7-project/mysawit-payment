@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,5 +36,40 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setStatus("PENDING");
 
         payrollRepository.save(payroll);
+    }
+
+    @Override
+    @Transactional
+    public Payroll acceptPayroll(UUID payrollId) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Payroll not found: " + payrollId));
+
+        if (!payroll.getStatus().equals("PENDING")) {
+            throw new RuntimeException(
+                    "Payroll status must be PENDING to accept");
+        }
+
+        payroll.setStatus("ACCEPTED");
+        payroll.setApprovedAt(LocalDateTime.now());
+        return payrollRepository.save(payroll);
+    }
+
+    @Override
+    @Transactional
+    public Payroll rejectPayroll(UUID payrollId, String reason) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Payroll not found: " + payrollId));
+
+        if (!payroll.getStatus().equals("PENDING")) {
+            throw new RuntimeException(
+                    "Payroll status must be PENDING to reject");
+        }
+
+        payroll.setStatus("REJECTED");
+        payroll.setRejectionReason(reason);
+        payroll.setApprovedAt(LocalDateTime.now());
+        return payrollRepository.save(payroll);
     }
 }

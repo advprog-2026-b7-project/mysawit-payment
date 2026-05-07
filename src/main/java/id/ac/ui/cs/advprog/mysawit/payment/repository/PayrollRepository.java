@@ -6,6 +6,8 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class PayrollRepository {
@@ -14,15 +16,22 @@ public class PayrollRepository {
     private EntityManager entityManager;
 
     @Transactional
-    public void save(Payroll payroll) {
+    public Payroll save(Payroll payroll) {
         if (payroll.getId() == null) {
             entityManager.persist(payroll);
+            return payroll;
         } else {
-            entityManager.merge(payroll);
+            return entityManager.merge(payroll);
         }
     }
 
     public List<Payroll> findAll() {
-        return entityManager.createQuery("SELECT p FROM Payroll p", Payroll.class).getResultList();
+        return entityManager.createQuery("SELECT p FROM Payroll p", 
+                Payroll.class).getResultList();
+    }
+
+    public Optional<Payroll> findById(UUID id) {
+        Payroll payroll = entityManager.find(Payroll.class, id);
+        return Optional.ofNullable(payroll);
     }
 }
