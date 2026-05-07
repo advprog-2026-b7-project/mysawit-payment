@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.mysawit.payment.controller;
 
 import id.ac.ui.cs.advprog.mysawit.payment.dto.ApiSuccessResponse;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollApprovalRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -45,9 +49,47 @@ public class PayrollController {
     public ResponseEntity<ApiSuccessResponse<List<Payroll>>>
             getPayrollByType(@PathVariable String payrollType) {
         List<Payroll> payrolls = payrollService.findAll().stream()
-                .filter(p -> p.getPayrollType().equalsIgnoreCase(payrollType))
+                .filter(p -> p.getPayrollType()
+                        .equalsIgnoreCase(payrollType))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
+    }
+
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<?> approvePayroll(
+            @PathVariable UUID id,
+            @RequestBody PayrollApprovalRequest request) {
+        try {
+            Payroll payroll;
+            if ("ACCEPT".equalsIgnoreCase(request.getAction())) {
+                payroll = payrollService.acceptPayroll(id);
+            } else if ("REJECT".equalsIgnoreCase(request.getAction())) {
+                if (request.getReason() == null || 
+                        request.getReason().trim().isEmpty()) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("status", "error");
+                    error.put("message", 
+                            "Rejection reason is required");
+                    return ResponseEntity.badRequest().body(error);
+                }
+                payroll = payrollService.rejectPayroll(id, 
+                        request.getReason());
+            } else {
+                Map<String, Object> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", 
+                        "Invalid action. Must be ACCEPT or REJECT");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            return ResponseEntity.ok(
+                    new ApiSuccessResponse<>(payroll));
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 }

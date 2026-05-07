@@ -29,6 +29,11 @@ public class Payroll {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    private LocalDateTime approvedAt;
+
     public Payroll() {
         this.status = "PENDING";
         this.createdAt = LocalDateTime.now();

@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.mysawit.payment.subscriber;
 
 import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.event.DeliveryApprovedEvent;
 import id.ac.ui.cs.advprog.mysawit.payment.event.HarvestApprovedEvent;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,49 @@ public class PayrollSubscriber {
         );
 
         payrollService.createPayrollFromHarvestApproval(request);
+    }
+
+    @EventListener
+    @Transactional
+    public void handleDeliveryApprovedEvent(DeliveryApprovedEvent event) {
+        Double driverAmount = event.getDriverAmount();
+        Double mandorAmount = event.getMandorAmount();
+
+        String driverDescription = String.format(
+            "Delivery Approved - ID: %s | Driver: %s | "
+                    + "Weight: %.2f kg | Price: Rp%.0f/kg | "
+                    + "Amount: Rp%.0f",
+            event.getDeliveryId(),
+            event.getDriverName(),
+            event.getWeightKg(),
+            event.getDriverPricePerKg(),
+            driverAmount
+        );
+
+        String mandorDescription = String.format(
+            "Delivery Approved - ID: %s | Mandor: %s | "
+                    + "Weight: %.2f kg | Price: Rp%.0f/kg | "
+                    + "Amount (90%%): Rp%.0f",
+            event.getDeliveryId(),
+            event.getMandorName(),
+            event.getWeightKg(),
+            event.getMandorPricePerKg(),
+            mandorAmount
+        );
+
+        DeliveryPayrollRequest request = new DeliveryPayrollRequest(
+            event.getDriverId(),
+            event.getDriverName(),
+            driverAmount,
+            event.getMandorId(),
+            event.getMandorName(),
+            mandorAmount,
+            event.getDeliveryId(),
+            driverDescription,
+            mandorDescription
+        );
+
+        payrollService.createPayrollFromDeliveryApproval(request);
     }
 }
 
