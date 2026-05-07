@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.mysawit.payment.service;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import org.junit.jupiter.api.Test;
@@ -22,13 +23,15 @@ class PayrollServiceImplTest {
 
     @Test
     void testCreatePayrollFromHarvestApproval() {
-        payrollService.createPayrollFromHarvestApproval(
+        HarvestPayrollRequest request = new HarvestPayrollRequest(
             "BURUH-001",
             "Budi",
             4500000.0,
             "HARVEST-001",
             "Harvest Approved - ID: HARVEST-001"
         );
+
+        payrollService.createPayrollFromHarvestApproval(request);
 
         verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
