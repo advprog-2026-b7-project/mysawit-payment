@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.mysawit.payment.service;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,37 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setStatus("PENDING");
 
         payrollRepository.save(payroll);
+    }
+
+    @Override
+    @Transactional
+    public void createPayrollFromDeliveryApproval(
+            DeliveryPayrollRequest request) {
+        Payroll driverPayroll = new Payroll();
+        driverPayroll.setWorkerId(request.getDriverId());
+        driverPayroll.setWorkerName(request.getDriverName());
+        driverPayroll.setAmount(request.getDriverAmount());
+        driverPayroll.setReferenceId(request.getDeliveryId());
+        driverPayroll.setPayrollType("DELIVERY");
+        driverPayroll.setDescription(request.getDriverDescription());
+        driverPayroll.setStatus("PENDING");
+
+        payrollRepository.save(driverPayroll);
+
+        if (request.getMandorId() != null 
+                && !request.getMandorId().trim().isEmpty()) {
+            Payroll mandorPayroll = new Payroll();
+            mandorPayroll.setWorkerId(request.getMandorId());
+            mandorPayroll.setWorkerName(request.getMandorName());
+            mandorPayroll.setAmount(request.getMandorAmount());
+            mandorPayroll.setReferenceId(request.getDeliveryId());
+            mandorPayroll.setPayrollType("DELIVERY");
+            mandorPayroll.setDescription(
+                    request.getMandorDescription());
+            mandorPayroll.setStatus("PENDING");
+
+            payrollRepository.save(mandorPayroll);
+        }
     }
 
     @Override

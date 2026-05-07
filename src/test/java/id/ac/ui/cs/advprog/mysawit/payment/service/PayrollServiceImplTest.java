@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.mysawit.payment.service;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import org.junit.jupiter.api.Test;
@@ -116,5 +117,43 @@ class PayrollServiceImplTest {
         assertThrows(RuntimeException.class, () -> {
             payrollService.acceptPayroll(payrollId);
         });
+    }
+
+    @Test
+    void testCreatePayrollFromDeliveryApproval() {
+        DeliveryPayrollRequest request = new DeliveryPayrollRequest(
+            "DRIVER-001",
+            "Ahmad",
+            3000000.0,
+            "MANDOR-001",
+            "Pak Bambang",
+            2700000.0,
+            "DELIVERY-001",
+            "Delivery Approved - Driver",
+            "Delivery Approved - Mandor"
+        );
+
+        payrollService.createPayrollFromDeliveryApproval(request);
+
+        verify(payrollRepository, times(2)).save(any(Payroll.class));
+    }
+
+    @Test
+    void testCreatePayrollFromDeliveryApprovalNoMandor() {
+        DeliveryPayrollRequest request = new DeliveryPayrollRequest(
+            "DRIVER-001",
+            "Ahmad",
+            3000000.0,
+            null,
+            null,
+            0.0,
+            "DELIVERY-001",
+            "Delivery Approved - Driver",
+            "Delivery Approved - Mandor"
+        );
+
+        payrollService.createPayrollFromDeliveryApproval(request);
+
+        verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
 }
