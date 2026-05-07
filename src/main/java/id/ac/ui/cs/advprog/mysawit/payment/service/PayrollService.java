@@ -5,5 +5,7 @@ import java.util.List;
 
 public interface PayrollService {
     List<Payroll> findAll();
-    void createPayrollFromEvent(String workerId, Double amount, String referenceId);
+
+    void createPayrollFromHarvestApproval(String buruhId, String buruhName,
+            Double amount, String harvestId, String description);
 }

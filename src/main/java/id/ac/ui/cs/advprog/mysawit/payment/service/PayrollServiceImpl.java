@@ -2,9 +2,7 @@ package id.ac.ui.cs.advprog.mysawit.payment.service;
 
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
-import id.ac.ui.cs.advprog.mysawit.payment.service.gateway.PaymentGateway;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +13,6 @@ import java.util.List;
 public class PayrollServiceImpl implements PayrollService {
 
     private final PayrollRepository payrollRepository;
-    private final PaymentGateway paymentGateway;
 
     @Override
     public List<Payroll> findAll() {
@@ -24,18 +21,18 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     @Transactional
-    public void createPayrollFromEvent(String workerId, Double amount, String referenceId) {
-
+    public void createPayrollFromHarvestApproval(String buruhId,
+            String buruhName, Double amount, String harvestId,
+            String description) {
         Payroll payroll = new Payroll();
-        payroll.setWorkerId(workerId);
+        payroll.setWorkerId(buruhId);
+        payroll.setWorkerName(buruhName);
         payroll.setAmount(amount);
-        payroll.setReferenceId(referenceId);
+        payroll.setReferenceId(harvestId);
+        payroll.setPayrollType("HARVEST");
+        payroll.setDescription(description);
         payroll.setStatus("PENDING");
-        payrollRepository.save(payroll);
 
-        boolean success = paymentGateway.processPayment(amount, "ACC-" + workerId);
-
-        payroll.setStatus(success ? "SUCCESS" : "FAILED");
         payrollRepository.save(payroll);
     }
 }

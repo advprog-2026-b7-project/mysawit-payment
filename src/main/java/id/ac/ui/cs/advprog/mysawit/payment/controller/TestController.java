@@ -14,8 +14,10 @@ public class TestController {
     private ApplicationEventPublisher eventPublisher;
 
     @GetMapping("/test/pay")
-    public String triggerPayment(@RequestParam String workerId, @RequestParam Double amount) {
-        PayrollEvent event = new PayrollEvent(workerId, amount, "REF-" + System.currentTimeMillis());
+    public String triggerPayment(@RequestParam String workerId,
+            @RequestParam Double amount) {
+        String referenceId = "REF-" + System.currentTimeMillis();
+        PayrollEvent event = new PayrollEvent(workerId, amount, referenceId);
 
         eventPublisher.publishEvent(event);
 
