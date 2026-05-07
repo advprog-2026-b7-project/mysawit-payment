@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.mysawit.payment.service;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
@@ -24,16 +25,15 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     @Transactional
-    public void createPayrollFromHarvestApproval(String buruhId,
-            String buruhName, Double amount, String harvestId,
-            String description) {
+    public void createPayrollFromHarvestApproval(
+            HarvestPayrollRequest request) {
         Payroll payroll = new Payroll();
-        payroll.setWorkerId(buruhId);
-        payroll.setWorkerName(buruhName);
-        payroll.setAmount(amount);
-        payroll.setReferenceId(harvestId);
+        payroll.setWorkerId(request.getBuruhId());
+        payroll.setWorkerName(request.getBuruhName());
+        payroll.setAmount(request.getAmount());
+        payroll.setReferenceId(request.getHarvestId());
         payroll.setPayrollType("HARVEST");
-        payroll.setDescription(description);
+        payroll.setDescription(request.getDescription());
         payroll.setStatus("PENDING");
 
         payrollRepository.save(payroll);

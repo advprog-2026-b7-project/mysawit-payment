@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.mysawit.payment.subscriber;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.event.DeliveryApprovedEvent;
 import id.ac.ui.cs.advprog.mysawit.payment.event.HarvestApprovedEvent;
@@ -30,13 +31,15 @@ public class PayrollSubscriber {
             amount
         );
 
-        payrollService.createPayrollFromHarvestApproval(
+        HarvestPayrollRequest request = new HarvestPayrollRequest(
             event.getBuruhId(),
             event.getBuruhName(),
             amount,
             event.getHarvestId(),
             description
         );
+
+        payrollService.createPayrollFromHarvestApproval(request);
     }
 
     @EventListener
