@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ class PayrollServiceImplTest {
         HarvestPayrollRequest request = new HarvestPayrollRequest(
             "BURUH-001",
             "Budi",
-            4500000.0,
+            new BigDecimal("4500000.0"),
             "HARVEST-001",
             "Harvest Approved - ID: HARVEST-001"
         );
@@ -47,7 +48,7 @@ class PayrollServiceImplTest {
         Payroll payroll = new Payroll();
         payroll.setId(payrollId);
         payroll.setWorkerId("BURUH-001");
-        payroll.setAmount(4500000.0);
+        payroll.setAmount(new BigDecimal("4500000.0"));
         payroll.setStatus("PENDING");
 
         when(payrollRepository.findById(payrollId))
@@ -68,7 +69,7 @@ class PayrollServiceImplTest {
         Payroll payroll = new Payroll();
         payroll.setId(payrollId);
         payroll.setWorkerId("BURUH-001");
-        payroll.setAmount(4500000.0);
+        payroll.setAmount(new BigDecimal("4500000.0"));
         payroll.setStatus("PENDING");
 
         when(payrollRepository.findById(payrollId))
@@ -127,10 +128,10 @@ class PayrollServiceImplTest {
         DeliveryPayrollRequest request = new DeliveryPayrollRequest(
             "DRIVER-001",
             "Ahmad",
-            3000000.0,
+            new BigDecimal("3000000.0"),
             "MANDOR-001",
             "Pak Bambang",
-            2700000.0,
+            new BigDecimal("2700000.0"),
             "DELIVERY-001",
             "Delivery Approved - Driver",
             "Delivery Approved - Mandor"
@@ -146,10 +147,10 @@ class PayrollServiceImplTest {
         DeliveryPayrollRequest request = new DeliveryPayrollRequest(
             "DRIVER-001",
             "Ahmad",
-            3000000.0,
+            new BigDecimal("3000000.0"),
             null,
             null,
-            0.0,
+            BigDecimal.ZERO,
             "DELIVERY-001",
             "Delivery Approved - Driver",
             "Delivery Approved - Mandor"

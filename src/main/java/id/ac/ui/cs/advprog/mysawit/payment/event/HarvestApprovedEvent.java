@@ -1,16 +1,17 @@
 package id.ac.ui.cs.advprog.mysawit.payment.event;
 
 import org.springframework.context.ApplicationEvent;
+import java.math.BigDecimal;
 
 public class HarvestApprovedEvent extends ApplicationEvent {
     private final String harvestId;
     private final String buruhId;
     private final String buruhName;
-    private final Double weightKg;
-    private final Double pricePerKg;
+    private final BigDecimal weightKg;
+    private final BigDecimal pricePerKg;
 
     public HarvestApprovedEvent(Object source, String harvestId, String buruhId,
-            String buruhName, Double weightKg, Double pricePerKg) {
+            String buruhName, BigDecimal weightKg, BigDecimal pricePerKg) {
         super(source);
         this.harvestId = harvestId;
         this.buruhId = buruhId;
@@ -31,15 +32,20 @@ public class HarvestApprovedEvent extends ApplicationEvent {
         return buruhName;
     }
 
-    public Double getWeightKg() {
+    public BigDecimal getWeightKg() {
         return weightKg;
     }
 
-    public Double getPricePerKg() {
+    public BigDecimal getPricePerKg() {
         return pricePerKg;
     }
 
-    public Double getCalculatedAmount() {
-        return weightKg * pricePerKg * 0.90;
+    public BigDecimal getCalculatedAmount() {
+        if (weightKg == null || pricePerKg == null) {
+            return BigDecimal.ZERO;
+        }
+        // Amount = weightKg × pricePerKg × 0.90
+        return weightKg.multiply(pricePerKg)
+                .multiply(new BigDecimal("0.90"));
     }
 }

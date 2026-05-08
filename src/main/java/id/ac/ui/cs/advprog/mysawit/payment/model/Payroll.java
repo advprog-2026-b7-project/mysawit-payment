@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.mysawit.payment.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,7 +18,7 @@ public class Payroll {
 
     private String workerId;
     private String workerName;
-    private Double amount;
+    private BigDecimal amount;
     private String status;
     private String referenceId;
     private LocalDateTime createdAt;

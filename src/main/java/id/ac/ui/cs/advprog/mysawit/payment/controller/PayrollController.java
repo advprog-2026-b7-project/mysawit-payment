@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +62,7 @@ public class PayrollController {
     @PostMapping("/{id}/approve")
     public ResponseEntity<?> approvePayroll(
             @PathVariable UUID id,
-            @RequestBody PayrollApprovalRequest request) {
+            @Valid @RequestBody PayrollApprovalRequest request) {
         try {
             Payroll payroll;
             if ("ACCEPT".equalsIgnoreCase(request.getAction())) {
@@ -97,7 +98,7 @@ public class PayrollController {
 
     @PostMapping("/harvest/create")
     public ResponseEntity<?> createPayrollFromHarvest(
-            @RequestBody HarvestPayrollRequest request) {
+            @Valid @RequestBody HarvestPayrollRequest request) {
         try {
             payrollService.createPayrollFromHarvestApproval(request);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -113,7 +114,7 @@ public class PayrollController {
 
     @PostMapping("/delivery/create")
     public ResponseEntity<?> createPayrollFromDelivery(
-            @RequestBody DeliveryPayrollRequest request) {
+            @Valid @RequestBody DeliveryPayrollRequest request) {
         try {
             payrollService.createPayrollFromDeliveryApproval(request);
             return ResponseEntity.status(HttpStatus.CREATED)

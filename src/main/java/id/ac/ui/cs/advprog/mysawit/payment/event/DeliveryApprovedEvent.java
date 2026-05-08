@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.mysawit.payment.event;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.ApplicationEvent;
+import java.math.BigDecimal;
 
 @Getter @Setter
 public class DeliveryApprovedEvent extends ApplicationEvent {
@@ -11,14 +12,14 @@ public class DeliveryApprovedEvent extends ApplicationEvent {
     private String driverName;
     private String mandorId;
     private String mandorName;
-    private Double weightKg;
-    private Double driverPricePerKg;
-    private Double mandorPricePerKg;
+    private BigDecimal weightKg;
+    private BigDecimal driverPricePerKg;
+    private BigDecimal mandorPricePerKg;
 
     public DeliveryApprovedEvent(Object source, String deliveryId,
             String driverId, String driverName, String mandorId,
-            String mandorName, Double weightKg, Double driverPricePerKg,
-            Double mandorPricePerKg) {
+            String mandorName, BigDecimal weightKg, BigDecimal driverPricePerKg,
+            BigDecimal mandorPricePerKg) {
         super(source);
         this.deliveryId = deliveryId;
         this.driverId = driverId;
@@ -31,8 +32,8 @@ public class DeliveryApprovedEvent extends ApplicationEvent {
     }
 
     public DeliveryApprovedEvent(Object source, String deliveryId,
-            String supirTrukId, String supirTrukName, Double weightKg,
-            Double pricePerKg) {
+            String supirTrukId, String supirTrukName, BigDecimal weightKg,
+            BigDecimal pricePerKg) {
         super(source);
         this.deliveryId = deliveryId;
         this.driverId = supirTrukId;
@@ -41,7 +42,7 @@ public class DeliveryApprovedEvent extends ApplicationEvent {
         this.mandorName = null;
         this.weightKg = weightKg;
         this.driverPricePerKg = pricePerKg;
-        this.mandorPricePerKg = 0.0;
+        this.mandorPricePerKg = BigDecimal.ZERO;
     }
 
     public String getSupirTrukId() {
@@ -52,19 +53,32 @@ public class DeliveryApprovedEvent extends ApplicationEvent {
         return driverName;
     }
 
-    public Double getPricePerKg() {
+    public BigDecimal getPricePerKg() {
         return driverPricePerKg;
     }
 
-    public Double getDriverAmount() {
-        return weightKg * driverPricePerKg * 0.90;
+    public BigDecimal getDriverAmount() {
+        if (weightKg == null || driverPricePerKg == null) {
+            return BigDecimal.ZERO;
+        }
+        // Amount = weightKg × pricePerKg × 0.90
+        return weightKg.multiply(driverPricePerKg)
+                .multiply(new BigDecimal("0.90"));
     }
 
-    public Double getMandorAmount() {
-        return mandorId != null ? weightKg * mandorPricePerKg * 0.90 : 0.0;
+    public BigDecimal getMandorAmount() {
+        if (mandorId == null || mandorId.trim().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        if (weightKg == null || mandorPricePerKg == null) {
+            return BigDecimal.ZERO;
+        }
+        // Amount = weightKg × pricePerKg × 0.90
+        return weightKg.multiply(mandorPricePerKg)
+                .multiply(new BigDecimal("0.90"));
     }
 
-    public Double getCalculatedAmount() {
+    public BigDecimal getCalculatedAmount() {
         return getDriverAmount();
     }
 }
