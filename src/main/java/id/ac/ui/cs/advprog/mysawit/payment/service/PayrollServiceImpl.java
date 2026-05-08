@@ -14,7 +14,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class PayrollServiceImpl implements PayrollService {
-
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_SUCCESS = "SUCCESS";
+    private static final String STATUS_FAILED = "FAILED";
+    private static final String STATUS_REJECTED = "REJECTED";
     private final PayrollRepository payrollRepository;
     private final PaymentGateway paymentGateway;
 
@@ -32,35 +35,33 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setWorkerId(workerId);
         payroll.setAmount(amount);
         payroll.setReferenceId(referenceId);
-        payroll.setStatus("PENDING");
+        payroll.setStatus(STATUS_PENDING);
         payrollRepository.save(payroll);
 
         boolean success = paymentGateway.processPayment(
                 amount, "ACC-" + workerId);
 
-        payroll.setStatus(success ? "SUCCESS" : "FAILED");
+        payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
         payrollRepository.save(payroll);
     }
     @Override
     @Transactional
     public void approvePayroll(UUID id) {
         Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && "PENDING".equals(payroll.getStatus())) {
+        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
             boolean success = paymentGateway.processPayment(
                     payroll.getAmount(),"ACC-" + payroll.getWorkerId());
-            payroll.setStatus(success ? "SUCCESS" : "FAILED");
+            payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
             payrollRepository.save(payroll);
         }
     }
 
     @Override
     @Transactional
-    public void rejectPayroll(
-            UUID id,
-            String reason) {
+    public void rejectPayroll(UUID id, String reason) {
         Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && "PENDING".equals(payroll.getStatus())) {
-            payroll.setStatus("REJECTED");
+        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
+            payroll.setStatus(STATUS_REJECTED);
             payroll.setRejectionReason(reason);
             payrollRepository.save(payroll);
         }
