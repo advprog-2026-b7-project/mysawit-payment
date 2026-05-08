@@ -17,6 +17,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,5 +44,21 @@ class PayrollControllerTest {
                 .andExpect(status().isOk());
 
         verify(payrollService, times(1)).rejectPayroll(id, "Data tidak valid");
+    }
+    @Test
+    void testApprovePayroll() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/payroll/" + id + "/approve")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(payrollService, times(1)).approvePayroll(id);
+    }
+    @Test
+    void testGetPayrollList() throws Exception {
+        mockMvc.perform(get("/api/payroll/list"))
+                .andExpect(status().isOk());
+        verify(payrollService, times(1)).findAll();
     }
 }
