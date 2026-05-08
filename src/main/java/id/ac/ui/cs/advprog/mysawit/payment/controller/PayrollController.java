@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollApprovalRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
-import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -27,35 +25,32 @@ public class PayrollController {
     @Autowired
     private PayrollService payrollService;
 
-    @Autowired
-    private PayrollRepository payrollRepository;
-
     @GetMapping("/list")
     public ResponseEntity<ApiSuccessResponse<List<Payroll>>> getPayrollList(
             @RequestParam(required = false) String tanggal,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String workerId) {
         
-        List<Payroll> payrolls;
-        
-        if (tanggal != null && !tanggal.isEmpty() && status != null && !status.isEmpty()) {
-            LocalDate filterDate = LocalDate.parse(tanggal);
-            payrolls = payrollRepository.findByTanggalAndStatus(filterDate, status);
-        } else if (tanggal != null && !tanggal.isEmpty()) {
-            LocalDate filterDate = LocalDate.parse(tanggal);
-            payrolls = payrollRepository.findByTanggal(filterDate);
-        } else if (status != null && !status.isEmpty()) {
-            payrolls = payrollRepository.findByStatus(status);
-        } else {
-            payrolls = payrollService.findAll();
-        }
+        LocalDate filterDate = (tanggal != null && !tanggal.isEmpty()) 
+                ? LocalDate.parse(tanggal) 
+                : null;
 
+        List<Payroll> payrolls = payrollService.findPayrolls(filterDate, status, workerId);
+        
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 
     @GetMapping("/by-type/{payrollType}")
     public ResponseEntity<ApiSuccessResponse<List<Payroll>>>
             getPayrollByType(@PathVariable String payrollType) {
-        List<Payroll> payrolls = payrollRepository.findByPayrollType(payrollType);
+        List<Payroll> payrolls = payrollService.findByPayrollType(payrollType);
+        return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
+    }
+
+    @GetMapping("/by-worker/{workerId}")
+    public ResponseEntity<ApiSuccessResponse<List<Payroll>>>
+            getPayrollByWorkerId(@PathVariable String workerId) {
+        List<Payroll> payrolls = payrollService.findByWorkerId(workerId);
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 

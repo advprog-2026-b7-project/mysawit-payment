@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -103,5 +104,64 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setRejectionReason(reason);
         payroll.setApprovedAt(LocalDateTime.now());
         return payrollRepository.save(payroll);
+    }
+
+    @Override
+    public List<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId) {
+        int filterCount = countActiveFilters(tanggal, status, workerId);
+        
+        return switch (filterCount) {
+            case 0 -> payrollRepository.findAll();
+            case 1 -> findWithSingleFilter(tanggal, status, workerId);
+            case 2 -> findWithTwoFilters(tanggal, status, workerId);
+            case 3 -> payrollRepository.findByTanggalAndStatusAndWorkerId(
+                    tanggal, status, workerId);
+            default -> payrollRepository.findAll();
+        };
+    }
+
+    private int countActiveFilters(LocalDate tanggal, String status, String workerId) {
+        int count = 0;
+        if (tanggal != null) {
+            count++;
+        }
+        if (status != null && !status.isEmpty()) {
+            count++;
+        }
+        if (workerId != null && !workerId.isEmpty()) {
+            count++;
+        }
+        return count;
+    }
+
+    private List<Payroll> findWithSingleFilter(LocalDate tanggal, String status, String workerId) {
+        if (tanggal != null) {
+            return payrollRepository.findByTanggal(tanggal);
+        } else if (status != null && !status.isEmpty()) {
+            return payrollRepository.findByStatus(status);
+        } else {
+            return payrollRepository.findByWorkerId(workerId);
+        }
+    }
+
+ 
+    private List<Payroll> findWithTwoFilters(LocalDate tanggal, String status, String workerId) {
+        if (tanggal != null && status != null && !status.isEmpty()) {
+            return payrollRepository.findByTanggalAndStatus(tanggal, status);
+        } else if (tanggal != null && workerId != null && !workerId.isEmpty()) {
+            return payrollRepository.findByTanggalAndWorkerId(tanggal, workerId);
+        } else {
+            return payrollRepository.findByStatusAndWorkerId(status, workerId);
+        }
+    }
+
+    @Override
+    public List<Payroll> findByPayrollType(String payrollType) {
+        return payrollRepository.findByPayrollType(payrollType);
+    }
+
+    @Override
+    public List<Payroll> findByWorkerId(String workerId) {
+        return payrollRepository.findByWorkerId(workerId);
     }
 }
