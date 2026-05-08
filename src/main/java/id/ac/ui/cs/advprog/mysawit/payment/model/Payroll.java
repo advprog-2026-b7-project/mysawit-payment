@@ -17,6 +17,7 @@ public class Payroll {
     private Double amount;
     private String status;
     private String referenceId;
+    private String rejectionReason;
 
     public Payroll() {
         this.status = "PENDING";
