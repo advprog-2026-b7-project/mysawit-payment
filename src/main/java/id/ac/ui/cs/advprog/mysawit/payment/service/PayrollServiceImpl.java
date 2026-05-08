@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,5 +38,26 @@ public class PayrollServiceImpl implements PayrollService {
 
         payroll.setStatus(success ? "SUCCESS" : "FAILED");
         payrollRepository.save(payroll);
+    }
+    @Override
+    @Transactional
+    public void approvePayroll(UUID id) {
+        Payroll payroll = payrollRepository.findById(id);
+        if (payroll != null && "PENDING".equals(payroll.getStatus())) {
+            boolean success = paymentGateway.processPayment(payroll.getAmount(), "ACC-" + payroll.getWorkerId());
+            payroll.setStatus(success ? "SUCCESS" : "FAILED");
+            payrollRepository.save(payroll);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void rejectPayroll(UUID id, String reason) {
+        Payroll payroll = payrollRepository.findById(id);
+        if (payroll != null && "PENDING".equals(payroll.getStatus())) {
+            payroll.setStatus("REJECTED");
+            payroll.setRejectionReason(reason);
+            payrollRepository.save(payroll);
+        }
     }
 }

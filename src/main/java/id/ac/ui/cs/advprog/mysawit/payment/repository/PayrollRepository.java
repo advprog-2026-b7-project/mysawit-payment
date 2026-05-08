@@ -6,6 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public class PayrollRepository {
@@ -24,5 +25,8 @@ public class PayrollRepository {
 
     public List<Payroll> findAll() {
         return entityManager.createQuery("SELECT p FROM Payroll p", Payroll.class).getResultList();
+    }
+    public Payroll findById(UUID id) {
+        return entityManager.find(Payroll.class, id);
     }
 }

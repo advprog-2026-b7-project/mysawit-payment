@@ -7,11 +7,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.util.UUID;
 
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.MediaType;
+import java.util.Map;
 
 @WebMvcTest(PayrollController.class)
 class PayrollControllerTest {
@@ -23,10 +27,17 @@ class PayrollControllerTest {
     private PayrollService payrollService;
 
     @Test
-    void testGetPayrollList() throws Exception {
-        when(payrollService.findAll()).thenReturn(List.of());
+    void testRejectPayrollWithReason() throws Exception {
+        UUID id = UUID.randomUUID();
+        Map<String, String> payload = Map.of("reason", "Data tidak valid");
+        String json = new ObjectMapper().writeValueAsString(payload);
 
-        mockMvc.perform(get("/api/payroll/list"))
+        mockMvc.perform(put("/api/payroll/" + id + "/reject")
+                        .contentType(MediaType.APPLICATION_JSON) // Wajib karena di Controller pakai @RequestBody
+                        .content(json)
+                        .with(csrf()))
                 .andExpect(status().isOk());
+
+        verify(payrollService, times(1)).rejectPayroll(id, "Data tidak valid");
     }
 }
