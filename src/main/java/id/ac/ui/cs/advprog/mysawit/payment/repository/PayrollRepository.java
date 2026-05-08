@@ -70,9 +70,6 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    /**
-     * Find payrolls by worker ID (exact match).
-     */
     public List<Payroll> findByWorkerId(String workerId) {
         return entityManager.createQuery(
                 "SELECT p FROM Payroll p WHERE p.workerId = :workerId", 
@@ -81,9 +78,7 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    /**
-     * Find payrolls by date and worker ID.
-     */
+
     public List<Payroll> findByTanggalAndWorkerId(LocalDate tanggal, String workerId) {
         String jpql = "SELECT p FROM Payroll p WHERE p.tanggal = :tanggal " +
                 "AND p.workerId = :workerId";
@@ -93,9 +88,6 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    /**
-     * Find payrolls by status and worker ID.
-     */
     public List<Payroll> findByStatusAndWorkerId(String status, String workerId) {
         String jpql = "SELECT p FROM Payroll p WHERE UPPER(p.status) = UPPER(:status) " +
                 "AND p.workerId = :workerId";
@@ -105,9 +97,6 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    /**
-     * Find payrolls by date, status, and worker ID (most specific query).
-     */
     public List<Payroll> findByTanggalAndStatusAndWorkerId(
             LocalDate tanggal, String status, String workerId) {
         String jpql = "SELECT p FROM Payroll p WHERE p.tanggal = :tanggal " +
