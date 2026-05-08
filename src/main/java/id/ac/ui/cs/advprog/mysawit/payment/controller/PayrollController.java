@@ -2,6 +2,8 @@ package id.ac.ui.cs.advprog.mysawit.payment.controller;
 
 import id.ac.ui.cs.advprog.mysawit.payment.dto.ApiSuccessResponse;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollApprovalRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +88,38 @@ public class PayrollController {
             return ResponseEntity.ok(
                     new ApiSuccessResponse<>(payroll));
         } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PostMapping("/harvest/create")
+    public ResponseEntity<?> createPayrollFromHarvest(
+            @RequestBody HarvestPayrollRequest request) {
+        try {
+            payrollService.createPayrollFromHarvestApproval(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiSuccessResponse<>(
+                            "Payroll created successfully from harvest approval"));
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PostMapping("/delivery/create")
+    public ResponseEntity<?> createPayrollFromDelivery(
+            @RequestBody DeliveryPayrollRequest request) {
+        try {
+            payrollService.createPayrollFromDeliveryApproval(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiSuccessResponse<>(
+                            "Payroll created successfully from delivery approval"));
+        } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", e.getMessage());
