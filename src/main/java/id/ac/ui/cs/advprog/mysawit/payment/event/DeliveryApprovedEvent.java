@@ -57,7 +57,7 @@ public class DeliveryApprovedEvent extends ApplicationEvent {
     }
 
     public Double getDriverAmount() {
-        return weightKg * driverPricePerKg;
+        return weightKg * driverPricePerKg * 0.90;
     }
 
     public Double getMandorAmount() {
