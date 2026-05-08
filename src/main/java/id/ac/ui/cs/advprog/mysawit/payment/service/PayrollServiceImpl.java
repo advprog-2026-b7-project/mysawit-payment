@@ -25,7 +25,8 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     @Transactional
-    public void createPayrollFromEvent(String workerId, Double amount, String referenceId) {
+    public void createPayrollFromEvent(
+            String workerId, Double amount, String referenceId) {
 
         Payroll payroll = new Payroll();
         payroll.setWorkerId(workerId);
@@ -34,7 +35,8 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setStatus("PENDING");
         payrollRepository.save(payroll);
 
-        boolean success = paymentGateway.processPayment(amount, "ACC-" + workerId);
+        boolean success = paymentGateway.processPayment(
+                amount, "ACC-" + workerId);
 
         payroll.setStatus(success ? "SUCCESS" : "FAILED");
         payrollRepository.save(payroll);
@@ -44,7 +46,8 @@ public class PayrollServiceImpl implements PayrollService {
     public void approvePayroll(UUID id) {
         Payroll payroll = payrollRepository.findById(id);
         if (payroll != null && "PENDING".equals(payroll.getStatus())) {
-            boolean success = paymentGateway.processPayment(payroll.getAmount(), "ACC-" + payroll.getWorkerId());
+            boolean success = paymentGateway.processPayment(
+                    payroll.getAmount(),"ACC-" + payroll.getWorkerId());
             payroll.setStatus(success ? "SUCCESS" : "FAILED");
             payrollRepository.save(payroll);
         }
@@ -52,7 +55,9 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     @Transactional
-    public void rejectPayroll(UUID id, String reason) {
+    public void rejectPayroll(
+            UUID id,
+            String reason) {
         Payroll payroll = payrollRepository.findById(id);
         if (payroll != null && "PENDING".equals(payroll.getStatus())) {
             payroll.setStatus("REJECTED");

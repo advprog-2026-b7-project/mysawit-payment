@@ -54,12 +54,10 @@ class PayrollServiceImplTest {
     @Test
     void testRejectPayrollLogic() {
         String reason = "Budget tidak mencukupi";
-        // Mocking repository findById
         when(payrollRepository.findById(payrollId)).thenReturn(pendingPayroll);
 
         payrollService.rejectPayroll(payrollId, reason);
 
-        // Assertions
         assertEquals("REJECTED", pendingPayroll.getStatus());
         assertEquals(reason, pendingPayroll.getRejectionReason());
         verify(payrollRepository, times(1)).save(pendingPayroll);
