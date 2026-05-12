@@ -16,7 +16,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class PayrollServiceImpl implements PayrollService {
-
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_SUCCESS = "SUCCESS";
+    private static final String STATUS_FAILED = "FAILED";
+    private static final String STATUS_REJECTED = "REJECTED";
     private final PayrollRepository payrollRepository;
 
     @Override
@@ -163,5 +166,27 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public List<Payroll> findByWorkerId(String workerId) {
         return payrollRepository.findByWorkerId(workerId);
+    }
+    @Override
+    @Transactional
+    public void approvePayroll(UUID id) {
+        Payroll payroll = payrollRepository.findById(id);
+        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
+            boolean success = paymentGateway.processPayment(
+                    payroll.getAmount(),"ACC-" + payroll.getWorkerId());
+            payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
+            payrollRepository.save(payroll);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void rejectPayroll(UUID id, String reason) {
+        Payroll payroll = payrollRepository.findById(id);
+        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
+            payroll.setStatus(STATUS_REJECTED);
+            payroll.setRejectionReason(reason);
+            payrollRepository.save(payroll);
+        }
     }
 }

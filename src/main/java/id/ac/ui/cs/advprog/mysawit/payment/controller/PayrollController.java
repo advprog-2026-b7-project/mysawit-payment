@@ -19,7 +19,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payroll")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
+        methods = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST, RequestMethod.OPTIONS})
 public class PayrollController {
 
     @Autowired
@@ -121,5 +122,15 @@ public class PayrollController {
             error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+    }
+
+    @PutMapping("/{id}/approve")
+    public void approve(@PathVariable UUID id) {
+        payrollService.approvePayroll(id);
+    }
+    @PutMapping("/{id}/reject")
+    public void reject(@PathVariable UUID id, @RequestBody Map<String, String> payload) {
+        String reason = payload.get("reason");
+        payrollService.rejectPayroll(id, reason);
     }
 }
