@@ -20,9 +20,11 @@ public class PayrollServiceImpl implements PayrollService {
     private static final String STATUS_SUCCESS = "SUCCESS";
     private static final String STATUS_FAILED = "FAILED";
     private static final String STATUS_REJECTED = "REJECTED";
+    private static final String STATUS_PROCESSING = "PROCESSING";
     private final PayrollRepository payrollRepository;
     private final PaymentGateway paymentGateway;
-    private static final Logger logger = LoggerFactory.getLogger(PayrollServiceImpl.class);
+    private final PayrollJobQueue payrollJobQueue;
+
     @Override
     public List<Payroll> findAll() {
         return payrollRepository.findAll();
@@ -31,10 +33,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public void createPayrollFromEvent(String workerId, Double amount, String referenceId) {
-        if (payrollRepository.existsByReferenceId(referenceId)) {
-            logger.warn("Payroll already exists for referenceId: {}", referenceId);
-            return;
-        }
+        if (payrollRepository.existsByReferenceId(referenceId)) return;
 
         Payroll payroll = new Payroll();
         payroll.setWorkerId(workerId);
@@ -43,7 +42,7 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setStatus(STATUS_PENDING);
         payrollRepository.save(payroll);
 
-        logger.info("Payroll created with PENDING status for worker: {}", workerId);
+        payrollJobQueue.processPayrollAsync(payroll.getId());
     }
     @Override
     @Transactional
@@ -66,5 +65,9 @@ public class PayrollServiceImpl implements PayrollService {
             payroll.setRejectionReason(reason);
             payrollRepository.save(payroll);
         }
+    }
+    @Override
+    public Payroll findById(UUID id) {
+        return payrollRepository.findById(id);
     }
 }

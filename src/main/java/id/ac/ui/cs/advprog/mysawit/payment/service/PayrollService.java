@@ -9,5 +9,5 @@ public interface PayrollService {
     void createPayrollFromEvent(String workerId, Double amount, String referenceId);
     void approvePayroll(UUID id);
     void rejectPayroll(UUID id, String reason);
-
+    Payroll findById(UUID id);
 }

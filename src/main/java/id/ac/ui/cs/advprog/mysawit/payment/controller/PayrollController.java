@@ -32,4 +32,15 @@ public class PayrollController {
         String reason = payload.get("reason");
         payrollService.rejectPayroll(id, reason);
     }
+    @GetMapping("/{id}/status")
+    public Map<String, String> getPayrollStatus(@PathVariable UUID id) {
+        Payroll payroll = payrollService.findById(id);
+        if (payroll == null) {
+            return Map.of("error", "Payroll not found");
+        }
+        return Map.of(
+                "id", payroll.getId().toString(),
+                "status", payroll.getStatus()
+        );
+    }
 }
