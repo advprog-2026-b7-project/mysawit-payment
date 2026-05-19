@@ -29,4 +29,11 @@ public class PayrollRepository {
     public Payroll findById(UUID id) {
         return entityManager.find(Payroll.class, id);
     }
+    public boolean existsByReferenceId(String referenceId) {
+        Long count = entityManager.createQuery(
+                        "SELECT COUNT(p) FROM Payroll p WHERE p.referenceId = :refId", Long.class)
+                .setParameter("refId", referenceId)
+                .getSingleResult();
+        return count > 0;
+    }
 }

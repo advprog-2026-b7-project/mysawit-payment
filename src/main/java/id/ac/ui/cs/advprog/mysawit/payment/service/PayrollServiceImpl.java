@@ -4,6 +4,8 @@ import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import id.ac.ui.cs.advprog.mysawit.payment.service.gateway.PaymentGateway;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,7 @@ public class PayrollServiceImpl implements PayrollService {
     private static final String STATUS_REJECTED = "REJECTED";
     private final PayrollRepository payrollRepository;
     private final PaymentGateway paymentGateway;
-
+    private static final Logger logger = LoggerFactory.getLogger(PayrollServiceImpl.class);
     @Override
     public List<Payroll> findAll() {
         return payrollRepository.findAll();
@@ -28,8 +30,11 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     @Transactional
-    public void createPayrollFromEvent(
-            String workerId, Double amount, String referenceId) {
+    public void createPayrollFromEvent(String workerId, Double amount, String referenceId) {
+        if (payrollRepository.existsByReferenceId(referenceId)) {
+            logger.warn("Payroll already exists for referenceId: {}", referenceId);
+            return;
+        }
 
         Payroll payroll = new Payroll();
         payroll.setWorkerId(workerId);
@@ -38,11 +43,7 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setStatus(STATUS_PENDING);
         payrollRepository.save(payroll);
 
-        boolean success = paymentGateway.processPayment(
-                amount, "ACC-" + workerId);
-
-        payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
-        payrollRepository.save(payroll);
+        logger.info("Payroll created with PENDING status for worker: {}", workerId);
     }
     @Override
     @Transactional
