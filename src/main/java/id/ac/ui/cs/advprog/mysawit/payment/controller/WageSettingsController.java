@@ -1,0 +1,43 @@
+package id.ac.ui.cs.advprog.mysawit.payment.controller;
+
+import id.ac.ui.cs.advprog.mysawit.payment.dto.ApiSuccessResponse;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.WageSettingsRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.WageSettingsResponse;
+import id.ac.ui.cs.advprog.mysawit.payment.service.WageSettingsService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/payment/wage-settings")
+@CrossOrigin(origins = "http://localhost:3000")
+public class WageSettingsController {
+
+    @Autowired
+    private WageSettingsService wageSettingsService;
+
+    /**
+     * Get current wage settings.
+     * Returns the current wage rates per kg for buruh, supir truck, and mandor.
+     */
+    @GetMapping
+    public ResponseEntity<ApiSuccessResponse<WageSettingsResponse>> getWageSettings() {
+        WageSettingsResponse settings = wageSettingsService.getWageSettings();
+        return ResponseEntity.ok(new ApiSuccessResponse<>(settings));
+    }
+
+    /**
+     * Update wage settings.
+     * Only admin users should be able to call this endpoint.
+     * 
+     * @param request new wage settings values
+     * @return updated wage settings
+     */
+    @PutMapping
+    public ResponseEntity<ApiSuccessResponse<WageSettingsResponse>> updateWageSettings(
+            @Valid @RequestBody WageSettingsRequest request) {
+        WageSettingsResponse updated = wageSettingsService.updateWageSettings(request);
+        return ResponseEntity.ok(new ApiSuccessResponse<>(updated));
+    }
+}
