@@ -107,4 +107,11 @@ public class PayrollRepository {
                 .setParameter("workerId", workerId)
                 .getResultList();
     }
+    public boolean existsByReferenceId(String referenceId) {
+        Long count = entityManager.createQuery(
+                        "SELECT COUNT(p) FROM Payroll p WHERE p.referenceId = :refId", Long.class)
+                .setParameter("refId", referenceId)
+                .getSingleResult();
+        return count > 0;
+    }
 }

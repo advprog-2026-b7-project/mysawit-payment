@@ -28,6 +28,12 @@ class PayrollServiceImplTest {
     @Mock
     private PayrollRepository payrollRepository;
 
+    @Mock
+    private PayrollJobQueue payrollJobQueue;
+
+    @Mock
+    private PaymentGateway paymentGateway;
+
     @InjectMocks
     private PayrollServiceImpl payrollService;
 
@@ -127,55 +133,130 @@ class PayrollServiceImplTest {
     }
 
     @Test
-    void testAcceptPayrollNotPending() {
-        UUID payrollId = UUID.randomUUID();
+    void testCreatePayrollFromEvent_WhenPaymentSuccess() {
+        String workerId = "W-01";
+        Double amount = 200000.0;
+        String referenceId = "REF-001";
+
+        when(payrollRepository.existsByReferenceId(referenceId))
+                .thenReturn(false);
+
+        payrollService.createPayrollFromEvent(workerId, amount, referenceId);
+
+        ArgumentCaptor<Payroll> payrollCaptor =
+                ArgumentCaptor.forClass(Payroll.class);
+
+        verify(payrollRepository, times(1))
+                .save(payrollCaptor.capture());
+
+        Payroll savedPayroll = payrollCaptor.getValue();
+        assertEquals("PENDING", savedPayroll.getStatus());
+        assertEquals(workerId, savedPayroll.getWorkerId());
+        assertEquals(amount, savedPayroll.getAmount());
+        assertEquals(referenceId, savedPayroll.getReferenceId());
+
+        verify(payrollJobQueue, times(1))
+                .processPayrollAsync(any());
+
+        verify(paymentGateway, never())
+                .processPayment(anyDouble(), anyString());
+    }
+
+    @Test
+    void testCreatePayrollFromEvent_WhenPaymentFails() {
+        String workerId = "W-02";
+        Double amount = 300000.0;
+        String referenceId = "REF-002";
+
+        when(payrollRepository.existsByReferenceId(referenceId))
+                .thenReturn(false);
+
+        payrollService.createPayrollFromEvent(workerId, amount, referenceId);
+
+        verify(payrollRepository, times(1)).save(any());
+        verify(payrollJobQueue, times(1)).processPayrollAsync(any());
+        verify(paymentGateway, never()).processPayment(anyDouble(), anyString());
+    }
+    @Test
+    void testCreatePayrollFromEvent_WhenDuplicateReferenceId_ShouldSkip() {
+        when(payrollRepository.existsByReferenceId("REF-001"))
+                .thenReturn(true);
+
+        payrollService.createPayrollFromEvent("W-01", 200000.0, "REF-001");
+
+        verify(payrollRepository, never()).save(any());
+        verify(payrollJobQueue, never()).processPayrollAsync(any());
+    }
+}
+@ExtendWith(MockitoExtension.class)
+class PayrollJobQueueTest {
+
+    @Mock
+    private PayrollRepository payrollRepository;
+
+    @Mock
+    private PaymentGateway paymentGateway;
+
+    @InjectMocks
+    private PayrollJobQueue payrollJobQueue;
+
+    @Test
+    void testProcessPayrollAsync_Success() {
+        UUID id = UUID.randomUUID();
         Payroll payroll = new Payroll();
-        payroll.setId(payrollId);
-        payroll.setStatus("ACCEPTED");
+        payroll.setId(id);
+        payroll.setStatus("PENDING");
+        payroll.setAmount(100000.0);
+        payroll.setWorkerId("W-01");
 
-        when(payrollRepository.findById(payrollId))
-                .thenReturn(Optional.of(payroll));
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+        when(paymentGateway.processPayment(anyDouble(), anyString())).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> {
-            payrollService.acceptPayroll(payrollId);
-        });
+        payrollJobQueue.processPayrollAsync(id);
+
+        assertEquals("SUCCESS", payroll.getStatus());
+        verify(payrollRepository, times(2)).save(payroll); // PROCESSING lalu SUCCESS
     }
 
     @Test
-    void testCreatePayrollFromDeliveryApproval() {
-        DeliveryPayrollRequest request = new DeliveryPayrollRequest(
-            "DRIVER-001",
-            "Ahmad",
-            new BigDecimal("3000000.0"),
-            "MANDOR-001",
-            "Pak Bambang",
-            new BigDecimal("2700000.0"),
-            "DELIVERY-001",
-            "Delivery Approved - Driver",
-            "Delivery Approved - Mandor"
-        );
+    void testProcessPayrollAsync_Failed() {
+        UUID id = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(id);
+        payroll.setStatus("PENDING");
+        payroll.setAmount(100000.0);
+        payroll.setWorkerId("W-01");
 
-        payrollService.createPayrollFromDeliveryApproval(request);
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+        when(paymentGateway.processPayment(anyDouble(), anyString())).thenReturn(false);
 
-        verify(payrollRepository, times(2)).save(any(Payroll.class));
+        payrollJobQueue.processPayrollAsync(id);
+
+        assertEquals("FAILED", payroll.getStatus());
     }
 
     @Test
-    void testCreatePayrollFromDeliveryApprovalNoMandor() {
-        DeliveryPayrollRequest request = new DeliveryPayrollRequest(
-            "DRIVER-001",
-            "Ahmad",
-            new BigDecimal("3000000.0"),
-            null,
-            null,
-            BigDecimal.ZERO,
-            "DELIVERY-001",
-            "Delivery Approved - Driver",
-            "Delivery Approved - Mandor"
-        );
+    void testProcessPayrollAsync_PayrollNotFound_ShouldDoNothing() {
+        UUID id = UUID.randomUUID();
+        when(payrollRepository.findById(id)).thenReturn(null);
 
-        payrollService.createPayrollFromDeliveryApproval(request);
+        payrollJobQueue.processPayrollAsync(id);
 
-        verify(payrollRepository, times(1)).save(any(Payroll.class));
+        verify(payrollRepository, never()).save(any());
+    }
+
+    @Test
+    void testProcessPayrollAsync_NotPending_ShouldSkip() {
+        UUID id = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(id);
+        payroll.setStatus("SUCCESS"); // bukan PENDING
+
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+
+        payrollJobQueue.processPayrollAsync(id);
+
+        verify(payrollRepository, never()).save(any());
+        verify(paymentGateway, never()).processPayment(anyDouble(), anyString());
     }
 }

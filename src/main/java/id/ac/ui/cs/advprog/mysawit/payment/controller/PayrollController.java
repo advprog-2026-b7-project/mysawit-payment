@@ -121,5 +121,15 @@ public class PayrollController {
                 .body(new ApiSuccessResponse<>(
                         "Payroll created successfully from delivery approval"));
     }
-
+    @GetMapping("/{id}/status")
+    public Map<String, String> getPayrollStatus(@PathVariable UUID id) {
+        Payroll payroll = payrollService.findById(id);
+        if (payroll == null) {
+            return Map.of("error", "Payroll not found");
+        }
+        return Map.of(
+                "id", payroll.getId().toString(),
+                "status", payroll.getStatus()
+        );
+    }
 }
