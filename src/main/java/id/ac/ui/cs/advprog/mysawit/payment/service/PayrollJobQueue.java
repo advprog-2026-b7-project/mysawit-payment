@@ -28,7 +28,7 @@ public class PayrollJobQueue {
     public void processPayrollAsync(UUID payrollId) {
         logger.info("[ASYNC] Starting payroll job for id: {}", payrollId);
 
-        Payroll payroll = payrollRepository.findById(payrollId);
+        Payroll payroll = payrollRepository.findById(payrollId).orElse(null);
 
         if (payroll == null) {
             logger.error("[ASYNC] Payroll not found: {}", payrollId);
@@ -46,7 +46,7 @@ public class PayrollJobQueue {
             payrollRepository.save(payroll);
 
             boolean success = paymentGateway.processPayment(
-                    payroll.getAmount(), "ACC-" + payroll.getWorkerId()
+                    payroll.getAmount().doubleValue(), "ACC-" + payroll.getWorkerId()
             );
 
             payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);

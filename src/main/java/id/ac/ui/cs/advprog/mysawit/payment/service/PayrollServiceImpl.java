@@ -4,6 +4,8 @@ import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.mysawit.payment.service.gateway.PaymentGateway;
+import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollJobQueue;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,6 +177,6 @@ public class PayrollServiceImpl implements PayrollService {
     }
     @Override
     public Payroll findById(UUID id) {
-        return payrollRepository.findById(id);
+        return payrollRepository.findById(id).orElse(null);
     }
 }
