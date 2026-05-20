@@ -33,7 +33,9 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public void createPayrollFromEvent(String workerId, Double amount, String referenceId) {
-        if (payrollRepository.existsByReferenceId(referenceId)) return;
+        if (payrollRepository.existsByReferenceId(referenceId)) {
+            return;
+        }
 
         Payroll payroll = new Payroll();
         payroll.setWorkerId(workerId);

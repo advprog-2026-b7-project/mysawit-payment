@@ -27,6 +27,9 @@ class PayrollServiceImplTest {
     private PayrollRepository payrollRepository;
 
     @Mock
+    private PayrollJobQueue payrollJobQueue;
+
+    @Mock
     private PaymentGateway paymentGateway;
 
     @InjectMocks
@@ -153,47 +156,28 @@ class PayrollServiceImplTest {
         Double amount = 200000.0;
         String referenceId = "REF-001";
 
-        when(
-                paymentGateway.processPayment(
-                        amount,
-                        "ACC-" + workerId
-                )
-        ).thenReturn(true);
+        when(payrollRepository.existsByReferenceId(referenceId))
+                .thenReturn(false);
 
-        payrollService.createPayrollFromEvent(
-                workerId,
-                amount,
-                referenceId
-        );
+        payrollService.createPayrollFromEvent(workerId, amount, referenceId);
 
         ArgumentCaptor<Payroll> payrollCaptor =
                 ArgumentCaptor.forClass(Payroll.class);
 
-        verify(payrollRepository, times(2))
+        verify(payrollRepository, times(1))
                 .save(payrollCaptor.capture());
 
-        Payroll savedPayroll =
-                payrollCaptor.getAllValues().get(1);
+        Payroll savedPayroll = payrollCaptor.getValue();
+        assertEquals("PENDING", savedPayroll.getStatus());
+        assertEquals(workerId, savedPayroll.getWorkerId());
+        assertEquals(amount, savedPayroll.getAmount());
+        assertEquals(referenceId, savedPayroll.getReferenceId());
 
-        assertEquals(
-                "SUCCESS",
-                savedPayroll.getStatus()
-        );
+        verify(payrollJobQueue, times(1))
+                .processPayrollAsync(any());
 
-        assertEquals(
-                workerId,
-                savedPayroll.getWorkerId()
-        );
-
-        assertEquals(
-                amount,
-                savedPayroll.getAmount()
-        );
-
-        assertEquals(
-                referenceId,
-                savedPayroll.getReferenceId()
-        );
+        verify(paymentGateway, never())
+                .processPayment(anyDouble(), anyString());
     }
 
     @Test
@@ -202,31 +186,23 @@ class PayrollServiceImplTest {
         Double amount = 300000.0;
         String referenceId = "REF-002";
 
-        when(
-                paymentGateway.processPayment(
-                        amount,
-                        "ACC-" + workerId
-                )
-        ).thenReturn(false);
+        when(payrollRepository.existsByReferenceId(referenceId))
+                .thenReturn(false);
 
-        payrollService.createPayrollFromEvent(
-                workerId,
-                amount,
-                referenceId
-        );
+        payrollService.createPayrollFromEvent(workerId, amount, referenceId);
 
-        ArgumentCaptor<Payroll> payrollCaptor =
-                ArgumentCaptor.forClass(Payroll.class);
+        verify(payrollRepository, times(1)).save(any());
+        verify(payrollJobQueue, times(1)).processPayrollAsync(any());
+        verify(paymentGateway, never()).processPayment(anyDouble(), anyString());
+    }
+    @Test
+    void testCreatePayrollFromEvent_WhenDuplicateReferenceId_ShouldSkip() {
+        when(payrollRepository.existsByReferenceId("REF-001"))
+                .thenReturn(true);
 
-        verify(payrollRepository, times(2))
-                .save(payrollCaptor.capture());
+        payrollService.createPayrollFromEvent("W-01", 200000.0, "REF-001");
 
-        Payroll savedPayroll =
-                payrollCaptor.getAllValues().get(1);
-
-        assertEquals(
-                "FAILED",
-                savedPayroll.getStatus()
-        );
+        verify(payrollRepository, never()).save(any());
+        verify(payrollJobQueue, never()).processPayrollAsync(any());
     }
 }
