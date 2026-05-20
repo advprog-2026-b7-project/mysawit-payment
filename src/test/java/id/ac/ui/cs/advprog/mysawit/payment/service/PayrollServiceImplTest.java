@@ -1,24 +1,26 @@
 package id.ac.ui.cs.advprog.mysawit.payment.service;
 
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
-import id.ac.ui.cs.advprog.mysawit.payment.repository
-        .PayrollRepository;
-import id.ac.ui.cs.advprog.mysawit.payment.service.gateway
-        .PaymentGateway;
+import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PayrollServiceImplTest {
@@ -44,110 +46,90 @@ class PayrollServiceImplTest {
 
         pendingPayroll = new Payroll();
         pendingPayroll.setId(payrollId);
-        pendingPayroll.setAmount(100000.0);
+        pendingPayroll.setAmount(new BigDecimal("100000.0"));
         pendingPayroll.setWorkerId("W-01");
         pendingPayroll.setStatus("PENDING");
     }
 
     @Test
-    void testApprovePayrollSuccess() {
-        when(payrollRepository.findById(payrollId))
-                .thenReturn(pendingPayroll);
-
-        when(
-                paymentGateway.processPayment(
-                        anyDouble(),
-                        anyString()
-                )
-        ).thenReturn(true);
-
-        payrollService.approvePayroll(payrollId);
-
-        assertEquals(
-                "SUCCESS",
-                pendingPayroll.getStatus()
+    void testCreatePayrollFromHarvestApproval() {
+        HarvestPayrollRequest request = new HarvestPayrollRequest(
+            "BURUH-001",
+            "Budi",
+            new BigDecimal("4500000.0"),
+            "HARVEST-001",
+            "Harvest Approved - ID: HARVEST-001"
         );
 
-        verify(payrollRepository, times(1))
-                .save(pendingPayroll);
+        payrollService.createPayrollFromHarvestApproval(request);
+
+        verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
 
     @Test
-    void testRejectPayrollLogic() {
-        String reason = "Budget tidak mencukupi";
+    void testAcceptPayroll() {
+        UUID payrollId = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(payrollId);
+        payroll.setWorkerId("BURUH-001");
+        payroll.setAmount(new BigDecimal("4500000.0"));
+        payroll.setStatus("PENDING");
 
         when(payrollRepository.findById(payrollId))
-                .thenReturn(pendingPayroll);
+                .thenReturn(Optional.of(payroll));
+        when(payrollRepository.save(any(Payroll.class)))
+                .thenReturn(payroll);
 
-        payrollService.rejectPayroll(
-                payrollId,
-                reason
-        );
+        Payroll result = payrollService.acceptPayroll(payrollId);
 
-        assertEquals(
-                "REJECTED",
-                pendingPayroll.getStatus()
-        );
-
-        assertEquals(
-                reason,
-                pendingPayroll.getRejectionReason()
-        );
-
-        verify(payrollRepository, times(1))
-                .save(pendingPayroll);
+        assertEquals("ACCEPTED", result.getStatus());
+        assertNotNull(result.getApprovedAt());
+        verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
 
     @Test
-    void testApprovePayroll_WhenPayrollNotFound_ShouldDoNothing() {
-        UUID randomId = UUID.randomUUID();
+    void testRejectPayroll() {
+        UUID payrollId = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(payrollId);
+        payroll.setWorkerId("BURUH-001");
+        payroll.setAmount(new BigDecimal("4500000.0"));
+        payroll.setStatus("PENDING");
 
-        when(payrollRepository.findById(randomId))
-                .thenReturn(null);
-
-        payrollService.approvePayroll(randomId);
-
-        verify(payrollRepository, never())
-                .save(any());
-    }
-
-    @Test
-    void testApprovePayroll_WhenPaymentFails_StatusShouldBeFAILED() {
         when(payrollRepository.findById(payrollId))
-                .thenReturn(pendingPayroll);
+                .thenReturn(Optional.of(payroll));
+        when(payrollRepository.save(any(Payroll.class)))
+                .thenReturn(payroll);
 
-        when(
-                paymentGateway.processPayment(
-                        anyDouble(),
-                        anyString()
-                )
-        ).thenReturn(false);
+        Payroll result = payrollService.rejectPayroll(payrollId, 
+                "Invalid calculation");
 
-        payrollService.approvePayroll(payrollId);
-
-        assertEquals(
-                "FAILED",
-                pendingPayroll.getStatus()
-        );
-
-        verify(payrollRepository, times(1))
-                .save(pendingPayroll);
+        assertEquals("REJECTED", result.getStatus());
+        assertEquals("Invalid calculation", result.getRejectionReason());
+        assertNotNull(result.getApprovedAt());
+        verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
 
     @Test
-    void testRejectPayroll_WhenPayrollNotFound_ShouldDoNothing() {
-        UUID randomId = UUID.randomUUID();
+    void testAcceptPayrollNotFound() {
+        UUID payrollId = UUID.randomUUID();
+        when(payrollRepository.findById(payrollId))
+                .thenReturn(Optional.empty());
 
-        when(payrollRepository.findById(randomId))
-                .thenReturn(null);
+        assertThrows(RuntimeException.class, () -> {
+            payrollService.acceptPayroll(payrollId);
+        });
+    }
 
-        payrollService.rejectPayroll(
-                randomId,
-                "Some reason"
-        );
+    @Test
+    void testRejectPayrollNotFound() {
+        UUID payrollId = UUID.randomUUID();
+        when(payrollRepository.findById(payrollId))
+                .thenReturn(Optional.empty());
 
-        verify(payrollRepository, never())
-                .save(any());
+        assertThrows(RuntimeException.class, () -> {
+            payrollService.rejectPayroll(payrollId, "Invalid");
+        });
     }
 
     @Test
