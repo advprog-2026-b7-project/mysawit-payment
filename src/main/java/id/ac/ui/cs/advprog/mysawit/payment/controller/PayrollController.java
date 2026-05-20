@@ -124,13 +124,4 @@ public class PayrollController {
         }
     }
 
-    @PutMapping("/{id}/approve")
-    public void approve(@PathVariable UUID id) {
-        payrollService.approvePayroll(id);
-    }
-    @PutMapping("/{id}/reject")
-    public void reject(@PathVariable UUID id, @RequestBody Map<String, String> payload) {
-        String reason = payload.get("reason");
-        payrollService.rejectPayroll(id, reason);
-    }
 }

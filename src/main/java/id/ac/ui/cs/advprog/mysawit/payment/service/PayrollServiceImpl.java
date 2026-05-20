@@ -167,26 +167,4 @@ public class PayrollServiceImpl implements PayrollService {
     public List<Payroll> findByWorkerId(String workerId) {
         return payrollRepository.findByWorkerId(workerId);
     }
-    @Override
-    @Transactional
-    public void approvePayroll(UUID id) {
-        Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
-            boolean success = paymentGateway.processPayment(
-                    payroll.getAmount(),"ACC-" + payroll.getWorkerId());
-            payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
-            payrollRepository.save(payroll);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void rejectPayroll(UUID id, String reason) {
-        Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
-            payroll.setStatus(STATUS_REJECTED);
-            payroll.setRejectionReason(reason);
-            payrollRepository.save(payroll);
-        }
-    }
 }

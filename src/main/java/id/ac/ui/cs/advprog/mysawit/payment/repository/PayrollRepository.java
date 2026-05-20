@@ -107,7 +107,4 @@ public class PayrollRepository {
                 .setParameter("workerId", workerId)
                 .getResultList();
     }
-    public Payroll findById(UUID id) {
-        return entityManager.find(Payroll.class, id);
-    }
 }
