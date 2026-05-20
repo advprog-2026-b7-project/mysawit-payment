@@ -3,6 +3,8 @@ package id.ac.ui.cs.advprog.mysawit.payment.service;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -18,11 +20,11 @@ public interface PayrollService {
 
     Payroll rejectPayroll(UUID payrollId, String reason);
 
-    List<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId);
+    Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId, Pageable pageable);
 
-    List<Payroll> findByPayrollType(String payrollType);
+    Page<Payroll> findByPayrollType(String payrollType, Pageable pageable);
 
-    List<Payroll> findByWorkerId(String workerId);
+    Page<Payroll> findByWorkerId(String workerId, Pageable pageable);
 
     Payroll findById(UUID id);
 }

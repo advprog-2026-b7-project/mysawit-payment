@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.mysawit.payment.controller;
 
 import id.ac.ui.cs.advprog.mysawit.payment.dto.ApiSuccessResponse;
-import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollApprovalRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollRejectRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
@@ -9,19 +9,20 @@ import id.ac.ui.cs.advprog.mysawit.payment.security.PayrollJwtClaimsResolver;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payroll")
 @CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST, RequestMethod.OPTIONS})
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.OPTIONS})
 public class PayrollController {
 
     @Autowired
@@ -31,11 +32,12 @@ public class PayrollController {
     private PayrollJwtClaimsResolver claimsResolver;
 
     @GetMapping("/list")
-    public ResponseEntity<ApiSuccessResponse<List<Payroll>>> getPayrollList(
+    public ResponseEntity<ApiSuccessResponse<Page<Payroll>>> getPayrollList(
             @RequestParam(required = false) String tanggal,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String workerId,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            Pageable pageable) {
         
         // Validate JWT token and user role
         claimsResolver.resolveViewer(authorization);
@@ -44,56 +46,61 @@ public class PayrollController {
                 ? LocalDate.parse(tanggal) 
                 : null;
 
-        List<Payroll> payrolls = payrollService.findPayrolls(filterDate, status, workerId);
+        Page<Payroll> payrolls = payrollService.findPayrolls(filterDate, status, workerId, pageable);
         
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 
     @GetMapping("/by-type/{payrollType}")
-    public ResponseEntity<ApiSuccessResponse<List<Payroll>>>
+    public ResponseEntity<ApiSuccessResponse<Page<Payroll>>>
             getPayrollByType(
                     @PathVariable String payrollType,
-                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                    Pageable pageable) {
         // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
-        List<Payroll> payrolls = payrollService.findByPayrollType(payrollType);
+        Page<Payroll> payrolls = payrollService.findByPayrollType(payrollType, pageable);
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 
     @GetMapping("/by-worker/{workerId}")
-    public ResponseEntity<ApiSuccessResponse<List<Payroll>>>
+    public ResponseEntity<ApiSuccessResponse<Page<Payroll>>>
             getPayrollByWorkerId(
                     @PathVariable String workerId,
-                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                    Pageable pageable) {
         // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
-        List<Payroll> payrolls = payrollService.findByWorkerId(workerId);
+        Page<Payroll> payrolls = payrollService.findByWorkerId(workerId, pageable);
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 
-    @PostMapping("/{id}/approve")
+    @PatchMapping("/{id}/approve")
     public ResponseEntity<ApiSuccessResponse<Payroll>> approvePayroll(
             @PathVariable UUID id,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
-            @Valid @RequestBody PayrollApprovalRequest request) {
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         // Validate JWT token and approver role (ADMIN only)
         claimsResolver.resolveApprover(authorization);
 
-        Payroll payroll;
-        if ("ACCEPT".equalsIgnoreCase(request.getAction())) {
-            payroll = payrollService.acceptPayroll(id);
-        } else if ("REJECT".equalsIgnoreCase(request.getAction())) {
-            if (request.getReason() == null || request.getReason().trim().isEmpty()) {
-                throw new IllegalArgumentException("Rejection reason is required");
-            }
-            payroll = payrollService.rejectPayroll(id, request.getReason());
-        } else {
-            throw new IllegalArgumentException(
-                    "Invalid action. Must be ACCEPT or REJECT");
+        Payroll payroll = payrollService.acceptPayroll(id);
+        return ResponseEntity.ok(new ApiSuccessResponse<>(payroll));
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<ApiSuccessResponse<Payroll>> rejectPayroll(
+            @PathVariable UUID id,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody PayrollRejectRequest request) {
+        // Validate JWT token and approver role (ADMIN only)
+        claimsResolver.resolveApprover(authorization);
+
+        if (request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new IllegalArgumentException("Rejection reason is required");
         }
 
+        Payroll payroll = payrollService.rejectPayroll(id, request.getReason());
         return ResponseEntity.ok(new ApiSuccessResponse<>(payroll));
     }
 

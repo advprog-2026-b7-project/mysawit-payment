@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,62 +120,57 @@ public class PayrollServiceImpl implements PayrollService {
     }
 
     @Override
-    public List<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId) {
+    public Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId, Pageable pageable) {
         int filterCount = countActiveFilters(tanggal, status, workerId);
         
         return switch (filterCount) {
-            case 0 -> payrollRepository.findAll();
-            case 1 -> findWithSingleFilter(tanggal, status, workerId);
-            case 2 -> findWithTwoFilters(tanggal, status, workerId);
+            case 0 -> payrollRepository.findAll(pageable);
+            case 1 -> findWithSingleFilter(tanggal, status, workerId, pageable);
+            case 2 -> findWithTwoFilters(tanggal, status, workerId, pageable);
             case 3 -> payrollRepository.findByTanggalAndStatusAndWorkerId(
-                    tanggal, status, workerId);
-            default -> payrollRepository.findAll();
+                    tanggal, status, workerId, pageable);
+            default -> payrollRepository.findAll(pageable);
         };
     }
 
     private int countActiveFilters(LocalDate tanggal, String status, String workerId) {
-        int count = 0;
-        if (tanggal != null) {
-            count++;
-        }
-        if (status != null && !status.isEmpty()) {
-            count++;
-        }
-        if (workerId != null && !workerId.isEmpty()) {
-            count++;
-        }
-        return count;
+        return (tanggal != null ? 1 : 0) +
+               (isNotEmpty(status) ? 1 : 0) +
+               (isNotEmpty(workerId) ? 1 : 0);
     }
 
-    private List<Payroll> findWithSingleFilter(LocalDate tanggal, String status, String workerId) {
-        if (tanggal != null) {
-            return payrollRepository.findByTanggal(tanggal);
-        } else if (status != null && !status.isEmpty()) {
-            return payrollRepository.findByStatus(status);
-        } else {
-            return payrollRepository.findByWorkerId(workerId);
-        }
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.isEmpty();
     }
 
- 
-    private List<Payroll> findWithTwoFilters(LocalDate tanggal, String status, String workerId) {
-        if (tanggal != null && status != null && !status.isEmpty()) {
-            return payrollRepository.findByTanggalAndStatus(tanggal, status);
-        } else if (tanggal != null && workerId != null && !workerId.isEmpty()) {
-            return payrollRepository.findByTanggalAndWorkerId(tanggal, workerId);
-        } else {
-            return payrollRepository.findByStatusAndWorkerId(status, workerId);
+    private Page<Payroll> findWithSingleFilter(LocalDate tanggal, String status, String workerId, Pageable pageable) {
+        if (tanggal != null) {
+            return payrollRepository.findByTanggal(tanggal, pageable);
         }
+        if (isNotEmpty(status)) {
+            return payrollRepository.findByStatus(status, pageable);
+        }
+        return payrollRepository.findByWorkerId(workerId, pageable);
+    }
+
+    private Page<Payroll> findWithTwoFilters(LocalDate tanggal, String status, String workerId, Pageable pageable) {
+        if (tanggal != null && isNotEmpty(status)) {
+            return payrollRepository.findByTanggalAndStatus(tanggal, status, pageable);
+        }
+        if (tanggal != null && isNotEmpty(workerId)) {
+            return payrollRepository.findByTanggalAndWorkerId(tanggal, workerId, pageable);
+        }
+        return payrollRepository.findByStatusAndWorkerId(status, workerId, pageable);
     }
 
     @Override
-    public List<Payroll> findByPayrollType(String payrollType) {
-        return payrollRepository.findByPayrollType(payrollType);
+    public Page<Payroll> findByPayrollType(String payrollType, Pageable pageable) {
+        return payrollRepository.findByPayrollType(payrollType, pageable);
     }
 
     @Override
-    public List<Payroll> findByWorkerId(String workerId) {
-        return payrollRepository.findByWorkerId(workerId);
+    public Page<Payroll> findByWorkerId(String workerId, Pageable pageable) {
+        return payrollRepository.findByWorkerId(workerId, pageable);
     }
     @Override
     public Payroll findById(UUID id) {
