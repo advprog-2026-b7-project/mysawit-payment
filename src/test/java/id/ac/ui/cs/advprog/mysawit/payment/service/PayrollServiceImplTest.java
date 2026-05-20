@@ -206,3 +206,75 @@ class PayrollServiceImplTest {
         verify(payrollJobQueue, never()).processPayrollAsync(any());
     }
 }
+@ExtendWith(MockitoExtension.class)
+class PayrollJobQueueTest {
+
+    @Mock
+    private PayrollRepository payrollRepository;
+
+    @Mock
+    private PaymentGateway paymentGateway;
+
+    @InjectMocks
+    private PayrollJobQueue payrollJobQueue;
+
+    @Test
+    void testProcessPayrollAsync_Success() {
+        UUID id = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(id);
+        payroll.setStatus("PENDING");
+        payroll.setAmount(100000.0);
+        payroll.setWorkerId("W-01");
+
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+        when(paymentGateway.processPayment(anyDouble(), anyString())).thenReturn(true);
+
+        payrollJobQueue.processPayrollAsync(id);
+
+        assertEquals("SUCCESS", payroll.getStatus());
+        verify(payrollRepository, times(2)).save(payroll); // PROCESSING lalu SUCCESS
+    }
+
+    @Test
+    void testProcessPayrollAsync_Failed() {
+        UUID id = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(id);
+        payroll.setStatus("PENDING");
+        payroll.setAmount(100000.0);
+        payroll.setWorkerId("W-01");
+
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+        when(paymentGateway.processPayment(anyDouble(), anyString())).thenReturn(false);
+
+        payrollJobQueue.processPayrollAsync(id);
+
+        assertEquals("FAILED", payroll.getStatus());
+    }
+
+    @Test
+    void testProcessPayrollAsync_PayrollNotFound_ShouldDoNothing() {
+        UUID id = UUID.randomUUID();
+        when(payrollRepository.findById(id)).thenReturn(null);
+
+        payrollJobQueue.processPayrollAsync(id);
+
+        verify(payrollRepository, never()).save(any());
+    }
+
+    @Test
+    void testProcessPayrollAsync_NotPending_ShouldSkip() {
+        UUID id = UUID.randomUUID();
+        Payroll payroll = new Payroll();
+        payroll.setId(id);
+        payroll.setStatus("SUCCESS"); // bukan PENDING
+
+        when(payrollRepository.findById(id)).thenReturn(payroll);
+
+        payrollJobQueue.processPayrollAsync(id);
+
+        verify(payrollRepository, never()).save(any());
+        verify(paymentGateway, never()).processPayment(anyDouble(), anyString());
+    }
+}
