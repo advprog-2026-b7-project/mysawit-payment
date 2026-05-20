@@ -4,7 +4,12 @@ import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
+import id.ac.ui.cs.advprog.mysawit.payment.service.gateway.PaymentGateway;
+import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollJobQueue;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +25,10 @@ public class PayrollServiceImpl implements PayrollService {
     private static final String STATUS_SUCCESS = "SUCCESS";
     private static final String STATUS_FAILED = "FAILED";
     private static final String STATUS_REJECTED = "REJECTED";
+    private static final String STATUS_PROCESSING = "PROCESSING";
     private final PayrollRepository payrollRepository;
+    private final PaymentGateway paymentGateway;
+    private final PayrollJobQueue payrollJobQueue;
 
     @Override
     public List<Payroll> findAll() {
@@ -168,25 +176,7 @@ public class PayrollServiceImpl implements PayrollService {
         return payrollRepository.findByWorkerId(workerId);
     }
     @Override
-    @Transactional
-    public void approvePayroll(UUID id) {
-        Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
-            boolean success = paymentGateway.processPayment(
-                    payroll.getAmount(),"ACC-" + payroll.getWorkerId());
-            payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
-            payrollRepository.save(payroll);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void rejectPayroll(UUID id, String reason) {
-        Payroll payroll = payrollRepository.findById(id);
-        if (payroll != null && STATUS_PENDING.equals(payroll.getStatus())) {
-            payroll.setStatus(STATUS_REJECTED);
-            payroll.setRejectionReason(reason);
-            payrollRepository.save(payroll);
-        }
+    public Payroll findById(UUID id) {
+        return payrollRepository.findById(id).orElse(null);
     }
 }

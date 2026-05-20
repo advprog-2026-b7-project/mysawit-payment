@@ -23,4 +23,6 @@ public interface PayrollService {
     List<Payroll> findByPayrollType(String payrollType);
 
     List<Payroll> findByWorkerId(String workerId);
+
+    Payroll findById(UUID id);
 }
