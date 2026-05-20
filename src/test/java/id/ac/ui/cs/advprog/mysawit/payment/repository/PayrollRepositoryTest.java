@@ -22,7 +22,8 @@ class PayrollRepositoryTest {
         payrollRepository.save(payroll);
 
         assertNotNull(payroll.getId());
-        Payroll found = payrollRepository.findById(payroll.getId());
+        Payroll found = payrollRepository.findById(payroll.getId()).orElse(null);
+        assertNotNull(found);
         assertEquals("WORKER-TEST", found.getWorkerId());
     }
 }
