@@ -26,7 +26,8 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public String createTopUpPaymentLink(String adminId, String adminName, Double amountSawitDollar) {
+    public String createTopUpPaymentLink(
+            String adminId, String adminName, Double amountSawitDollar) {
         double amountRupiah = amountSawitDollar * RUPIAH_PER_SAWIT_DOLLAR;
 
         String externalId = "TOPUP-" + adminId + "-" + UUID.randomUUID()
@@ -70,7 +71,8 @@ public class WalletServiceImpl implements WalletService {
             return true;
 
         } catch (Exception e) {
-            logger.error("Error parsing externalId saat callback: {}, error: {}", externalId, e.getMessage());
+            logger.error("Error parsing externalId saat callback: {}, " +
+                    "error: {}", externalId, e.getMessage());
             return false;
         }
     }
@@ -101,7 +103,8 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(adminWallet);
         walletRepository.save(workerWallet);
 
-        logger.info("Transfer {}SD dari admin={} ke worker={}", amountSawitDollar, adminId, workerId);
+        logger.info("Transfer {}SD dari admin={} ke worker={}",
+                amountSawitDollar, adminId, workerId);
     }
 
     private void creditWallet(String userId, Double amount) {

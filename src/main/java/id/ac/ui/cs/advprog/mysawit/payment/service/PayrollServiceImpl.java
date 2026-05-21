@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.repository.PayrollRepository;
 import id.ac.ui.cs.advprog.mysawit.payment.service.gateway.PaymentGateway;
-import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollJobQueue;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +28,6 @@ public class PayrollServiceImpl implements PayrollService {
     private static final String STATUS_REJECTED = "REJECTED";
     private static final String STATUS_PROCESSING = "PROCESSING";
     private final PayrollRepository payrollRepository;
-    private final PaymentGateway paymentGateway;
-    private final PayrollJobQueue payrollJobQueue;
 
     @Override
     public List<Payroll> findAll() {
@@ -68,7 +65,7 @@ public class PayrollServiceImpl implements PayrollService {
 
         payrollRepository.save(driverPayroll);
 
-        if (request.getMandorId() != null 
+        if (request.getMandorId() != null
                 && !request.getMandorId().trim().isEmpty()) {
             Payroll mandorPayroll = new Payroll();
             mandorPayroll.setWorkerId(request.getMandorId());
@@ -123,7 +120,7 @@ public class PayrollServiceImpl implements PayrollService {
     public Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId,
                                        Pageable pageable) {
         int filterCount = countActiveFilters(tanggal, status, workerId);
-        
+
         return switch (filterCount) {
             case 0 -> payrollRepository.findAll(pageable);
             case 1 -> findWithSingleFilter(tanggal, status, workerId, pageable);

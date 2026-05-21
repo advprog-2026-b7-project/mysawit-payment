@@ -25,7 +25,7 @@ public class XenditPaymentGateway implements PaymentGateway {
 
     public XenditPaymentGateway(
             @Value("${xendit.api.key}") String apiKey,
-            @Value("${xendit.callback.token}") String callbackToken) {
+            @Value("${xendit.callback.token:dummy-token}") String callbackToken) {
 
         this.restTemplate = new RestTemplate();
         this.callbackToken = callbackToken;
