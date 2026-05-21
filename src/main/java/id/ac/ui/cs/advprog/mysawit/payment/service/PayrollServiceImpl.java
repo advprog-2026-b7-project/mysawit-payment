@@ -120,7 +120,8 @@ public class PayrollServiceImpl implements PayrollService {
     }
 
     @Override
-    public Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId, Pageable pageable) {
+    public Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId,
+                                       Pageable pageable) {
         int filterCount = countActiveFilters(tanggal, status, workerId);
         
         return switch (filterCount) {
@@ -143,7 +144,8 @@ public class PayrollServiceImpl implements PayrollService {
         return value != null && !value.isEmpty();
     }
 
-    private Page<Payroll> findWithSingleFilter(LocalDate tanggal, String status, String workerId, Pageable pageable) {
+    private Page<Payroll> findWithSingleFilter(LocalDate tanggal, String status,
+                                                String workerId, Pageable pageable) {
         if (tanggal != null) {
             return payrollRepository.findByTanggal(tanggal, pageable);
         }
@@ -153,7 +155,8 @@ public class PayrollServiceImpl implements PayrollService {
         return payrollRepository.findByWorkerId(workerId, pageable);
     }
 
-    private Page<Payroll> findWithTwoFilters(LocalDate tanggal, String status, String workerId, Pageable pageable) {
+    private Page<Payroll> findWithTwoFilters(LocalDate tanggal, String status,
+                                              String workerId, Pageable pageable) {
         if (tanggal != null && isNotEmpty(status)) {
             return payrollRepository.findByTanggalAndStatus(tanggal, status, pageable);
         }

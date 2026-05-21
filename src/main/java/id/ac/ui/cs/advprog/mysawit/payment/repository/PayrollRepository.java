@@ -101,7 +101,8 @@ public class PayrollRepository {
         int offset = pageNumber * pageSize;
 
         List<Payroll> content = entityManager.createQuery(
-                "SELECT p FROM Payroll p WHERE UPPER(p.status) = UPPER(:status) ORDER BY p.id DESC", 
+                "SELECT p FROM Payroll p WHERE UPPER(p.status) = UPPER(:status) "
+                + "ORDER BY p.id DESC", 
                 Payroll.class)
                 .setParameter("status", status)
                 .setFirstResult(offset)
@@ -109,7 +110,8 @@ public class PayrollRepository {
                 .getResultList();
 
         Long total = entityManager.createQuery(
-                "SELECT COUNT(p) FROM Payroll p WHERE UPPER(p.status) = UPPER(:status)", Long.class)
+                "SELECT COUNT(p) FROM Payroll p WHERE UPPER(p.status) = "
+                + "UPPER(:status)", Long.class)
                 .setParameter("status", status)
                 .getSingleResult();
 
@@ -126,7 +128,8 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    public Page<Payroll> findByTanggalAndStatus(LocalDate tanggal, String status, Pageable pageable) {
+    public Page<Payroll> findByTanggalAndStatus(LocalDate tanggal, String status,
+                                                   Pageable pageable) {
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int offset = pageNumber * pageSize;
@@ -165,7 +168,8 @@ public class PayrollRepository {
         int offset = pageNumber * pageSize;
 
         List<Payroll> content = entityManager.createQuery(
-                "SELECT p FROM Payroll p WHERE UPPER(p.payrollType) = UPPER(:payrollType) ORDER BY p.id DESC", 
+                "SELECT p FROM Payroll p WHERE UPPER(p.payrollType) = UPPER(:payrollType) "
+                + "ORDER BY p.id DESC", 
                 Payroll.class)
                 .setParameter("payrollType", payrollType)
                 .setFirstResult(offset)
@@ -173,7 +177,8 @@ public class PayrollRepository {
                 .getResultList();
 
         Long total = entityManager.createQuery(
-                "SELECT COUNT(p) FROM Payroll p WHERE UPPER(p.payrollType) = UPPER(:payrollType)", Long.class)
+                "SELECT COUNT(p) FROM Payroll p WHERE UPPER(p.payrollType) = "
+                + "UPPER(:payrollType)", Long.class)
                 .setParameter("payrollType", payrollType)
                 .getSingleResult();
 
@@ -194,7 +199,8 @@ public class PayrollRepository {
         int offset = pageNumber * pageSize;
 
         List<Payroll> content = entityManager.createQuery(
-                "SELECT p FROM Payroll p WHERE p.workerId = :workerId ORDER BY p.id DESC", 
+                "SELECT p FROM Payroll p WHERE p.workerId = :workerId "
+                + "ORDER BY p.id DESC", 
                 Payroll.class)
                 .setParameter("workerId", workerId)
                 .setFirstResult(offset)
@@ -219,7 +225,8 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    public Page<Payroll> findByTanggalAndWorkerId(LocalDate tanggal, String workerId, Pageable pageable) {
+    public Page<Payroll> findByTanggalAndWorkerId(LocalDate tanggal, String workerId,
+                                                    Pageable pageable) {
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int offset = pageNumber * pageSize;
@@ -253,7 +260,8 @@ public class PayrollRepository {
                 .getResultList();
     }
 
-    public Page<Payroll> findByStatusAndWorkerId(String status, String workerId, Pageable pageable) {
+    public Page<Payroll> findByStatusAndWorkerId(String status, String workerId,
+                                                  Pageable pageable) {
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int offset = pageNumber * pageSize;
@@ -297,7 +305,8 @@ public class PayrollRepository {
 
         List<Payroll> content = entityManager.createQuery(
                 "SELECT p FROM Payroll p WHERE p.tanggal = :tanggal " +
-                "AND UPPER(p.status) = UPPER(:status) AND p.workerId = :workerId ORDER BY p.id DESC",
+                "AND UPPER(p.status) = UPPER(:status) AND p.workerId = :workerId " +
+                "ORDER BY p.id DESC",
                 Payroll.class)
                 .setParameter("tanggal", tanggal)
                 .setParameter("status", status)
@@ -318,7 +327,8 @@ public class PayrollRepository {
     }
     public boolean existsByReferenceId(String referenceId) {
         Long count = entityManager.createQuery(
-                        "SELECT COUNT(p) FROM Payroll p WHERE p.referenceId = :refId", Long.class)
+                        "SELECT COUNT(p) FROM Payroll p WHERE p.referenceId = :refId",
+                        Long.class)
                 .setParameter("refId", referenceId)
                 .getSingleResult();
         return count > 0;

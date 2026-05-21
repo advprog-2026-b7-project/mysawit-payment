@@ -23,7 +23,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/payroll")
 @CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.OPTIONS})
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH,
+                RequestMethod.OPTIONS})
 public class PayrollController {
 
     @Autowired
@@ -47,7 +48,8 @@ public class PayrollController {
                 ? LocalDate.parse(tanggal) 
                 : null;
 
-        Page<Payroll> payrolls = payrollService.findPayrolls(filterDate, status, workerId, pageable);
+        Page<Payroll> payrolls = payrollService.findPayrolls(
+                filterDate, status, workerId, pageable);
         
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }

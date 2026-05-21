@@ -20,7 +20,8 @@ public interface PayrollService {
 
     Payroll rejectPayroll(UUID payrollId, String reason);
 
-    Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId, Pageable pageable);
+    Page<Payroll> findPayrolls(LocalDate tanggal, String status, String workerId,
+                                Pageable pageable);
 
     Page<Payroll> findByPayrollType(String payrollType, Pageable pageable);
 
