@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class PayrollController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String workerId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
-            Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         
         // Validate JWT token and user role
         claimsResolver.resolveViewer(authorization);
@@ -56,7 +57,7 @@ public class PayrollController {
             getPayrollByType(
                     @PathVariable String payrollType,
                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
-                    Pageable pageable) {
+                    @PageableDefault(size = 20) Pageable pageable) {
         // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
@@ -69,7 +70,7 @@ public class PayrollController {
             getPayrollByWorkerId(
                     @PathVariable String workerId,
                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
-                    Pageable pageable) {
+                    @PageableDefault(size = 20) Pageable pageable) {
         // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
