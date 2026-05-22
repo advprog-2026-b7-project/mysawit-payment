@@ -8,14 +8,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/wallet")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class WalletController {
 
     private static final Logger logger = LoggerFactory.getLogger(WalletController.class);
@@ -25,27 +28,19 @@ public class WalletController {
 
     public WalletController(WalletService walletService,
                             PayrollJwtClaimsResolver claimsResolver) {
-        this.walletService = walletService;
+        this.walletService  = walletService;
         this.claimsResolver = claimsResolver;
     }
 
-    /**
-     * Step 1 dari flow Xendit:
-     * Frontend request ke sini → backend buat invoice di Xendit → return payment URL.
-     *
-     * POST /api/wallet/topup
-     * Body: { "amountSawitDollar": 100 }   ← jumlah SawitDollar yang mau dibeli
-     * Response: { "data": { "paymentUrl": "https://checkout.xendit.co/..." } }
-     */
     @PostMapping("/topup")
     public ResponseEntity<ApiSuccessResponse<Map<String, String>>> topUp(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @RequestBody TopUpRequest request) {
 
         // Hanya Admin Utama yang bisa top-up
-        var claims = claimsResolver.resolveApprover(authorization);
-        String adminId   = claims.getUserId();
-        String adminName = claims.getUserName();
+        var claims   = claimsResolver.resolveApprover(authorization);
+        String adminId   = claims.userId();   // record accessor
+        String adminName = claims.name();     // record accessor
 
         String paymentUrl = walletService.createTopUpPaymentLink(
                 adminId, adminName, request.getAmountSawitDollar());
@@ -59,18 +54,6 @@ public class WalletController {
                 new ApiSuccessResponse<>(Map.of("paymentUrl", paymentUrl)));
     }
 
-    /**
-     * Step 2 dari flow Xendit (callback/webhook):
-     * Setelah user bayar, Xendit POST ke sini secara otomatis.
-     * Backend verifikasi lalu tambah saldo wallet Admin.
-     *
-     * POST /api/wallet/xendit/callback
-     * Header: x-callback-token (secret dari Xendit dashboard)
-     * Body: { "external_id": "...", "status": "PAID", "amount": 1000000, ... }
-     *
-     * PENTING: endpoint ini harus EXEMPT dari JWT auth (tidak pakai Bearer token)
-     * Tambahkan path ini ke SecurityConfig sebagai permitAll()
-     */
     @PostMapping("/xendit/callback")
     public ResponseEntity<String> xenditCallback(
             @RequestHeader("x-callback-token") String callbackToken,
@@ -82,27 +65,22 @@ public class WalletController {
 
         logger.info("Xendit callback diterima: externalId={}, status={}", externalId, status);
 
-        boolean valid = walletService.handleXenditCallback(callbackToken, status, externalId, amountObj);
+        boolean valid = walletService.handleXenditCallback(
+                callbackToken, status, externalId, amountObj);
 
         if (!valid) {
             logger.warn("Xendit callback ditolak: externalId={}", externalId);
             return ResponseEntity.badRequest().body("Invalid callback");
         }
-
-        // Xendit butuh response 200 agar tidak retry
         return ResponseEntity.ok("OK");
     }
 
-    /**
-     * GET saldo wallet user yang sedang login.
-     * GET /api/wallet/balance
-     */
     @GetMapping("/balance")
     public ResponseEntity<ApiSuccessResponse<Map<String, Object>>> getBalance(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
 
         var claims  = claimsResolver.resolve(authorization);
-        String userId = claims.getUserId();
+        String userId = claims.workerId();   // record accessor
 
         Double balance = walletService.getBalance(userId);
 

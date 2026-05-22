@@ -1,9 +1,9 @@
 package id.ac.ui.cs.advprog.mysawit.payment.controller;
 
 import id.ac.ui.cs.advprog.mysawit.payment.dto.ApiSuccessResponse;
-import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollRejectRequest;
-import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.dto.DeliveryPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.HarvestPayrollRequest;
+import id.ac.ui.cs.advprog.mysawit.payment.dto.PayrollRejectRequest;
 import id.ac.ui.cs.advprog.mysawit.payment.model.Payroll;
 import id.ac.ui.cs.advprog.mysawit.payment.security.PayrollJwtClaimsResolver;
 import id.ac.ui.cs.advprog.mysawit.payment.service.PayrollService;
@@ -15,7 +15,16 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
@@ -38,14 +47,14 @@ public class PayrollController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @PageableDefault(size = 20) Pageable pageable) {
         claimsResolver.resolveViewer(authorization);
-        
-        LocalDate filterDate = (tanggal != null && !tanggal.isEmpty()) 
-                ? LocalDate.parse(tanggal) 
+
+        LocalDate filterDate = (tanggal != null && !tanggal.isEmpty())
+                ? LocalDate.parse(tanggal)
                 : null;
 
         Page<Payroll> payrolls = payrollService.findPayrolls(
                 filterDate, status, workerId, pageable);
-        
+
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
 
@@ -56,7 +65,7 @@ public class PayrollController {
                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                     @PageableDefault(size = 20) Pageable pageable) {
         claimsResolver.resolveViewer(authorization);
-        
+
         Page<Payroll> payrolls = payrollService.findByPayrollType(payrollType, pageable);
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
     }
@@ -71,6 +80,25 @@ public class PayrollController {
         
         Page<Payroll> payrolls = payrollService.findByWorkerId(workerId, pageable);
         return ResponseEntity.ok(new ApiSuccessResponse<>(payrolls));
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<ApiSuccessResponse<Map<String, String>>> getPayrollStatus(
+            @PathVariable UUID id,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+
+        claimsResolver.resolveViewer(authorization);
+
+        Payroll payroll = payrollService.findById(id);
+        if (payroll == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiSuccessResponse<>(Map.of("error", "Payroll not found")));
+        }
+
+        return ResponseEntity.ok(new ApiSuccessResponse<>(Map.of(
+                "id", payroll.getId().toString(),
+                "status", payroll.getStatus()
+        )));
     }
 
     @PatchMapping("/{id}/approve")
