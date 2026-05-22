@@ -40,9 +40,10 @@ public class XenditPaymentGateway implements PaymentGateway {
             headers.set(HttpHeaders.AUTHORIZATION, authHeader);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
+            long amountLong = Math.round(amount);
             Map<String, Object> requestBody = Map.of(
                     "external_id", UUID.randomUUID().toString(),
-                    "amount", amount.intValue(),
+                    "amount", amountLong,
                     "bank_code", "BCA",
                     "account_holder_name", destinationAccount,
                     "account_number", destinationAccount.replace("ACC-", ""),

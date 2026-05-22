@@ -1,0 +1,12 @@
+services:
+  mysawit-payment:
+    build: .
+    container_name: mysawit-payment
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5435/mysawit_payment
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      JWT_SECRET: mysawit-secret
+      SERVER_PORT: 8084
+    ports:
+      - "8084:8084"

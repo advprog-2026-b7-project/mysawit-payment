@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import java.time.format.DateTimeParseException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,12 +63,32 @@ public class PayrollExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<PayrollErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        PayrollErrorResponse response = new PayrollErrorResponse(
+                "error",
+                PayrollErrorKey.INVALID_REQUEST,
+                ex.getMessage(),
+                Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<PayrollErrorResponse> handleDateTimeParse(DateTimeParseException ex) {
+        PayrollErrorResponse response = new PayrollErrorResponse(
+                "error",
+                PayrollErrorKey.INVALID_REQUEST,
+                "Invalid date format. Use yyyy-MM-dd",
+                Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<PayrollErrorResponse> handleGeneralException(Exception ex) {
         PayrollErrorResponse response = new PayrollErrorResponse(
                 "error",
                 PayrollErrorKey.INTERNAL_ERROR,
-                "An unexpected error occurred",
+                "An unexpected error occurred: " + ex.getMessage(),
                 Instant.now());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }

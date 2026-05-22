@@ -17,6 +17,7 @@ public class PayrollJwtClaimsResolver {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String ROLE_CLAIM = "role";
     private static final String NAME_CLAIM = "name";
+    private static final String NAMA_CLAIM = "nama";
     
     private final javax.crypto.SecretKey secretKey;
 
@@ -31,13 +32,13 @@ public class PayrollJwtClaimsResolver {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
         
-        if (role == null || (!role.equals("WORKER") && !role.equals("BURUH"))) {
+        if (!isKnownMysawitRole(role)) {
             throw new PayrollAuthorizationException(
-                    "Only WORKER role can submit payroll");
+                    "User role is not authorized to create payroll");
         }
 
         String workerId = extractUserId(claims);
-        String workerName = (String) claims.get(NAME_CLAIM);
+        String workerName = extractDisplayName(claims);
         
         return new PayrollSubmissionContext(workerId, workerName, role);
     }
@@ -55,7 +56,7 @@ public class PayrollJwtClaimsResolver {
         }
 
         String userId = extractUserId(claims);
-        String name = (String) claims.get(NAME_CLAIM);
+        String name = extractDisplayName(claims);
         
         return new PayrollApprovalContext(userId, role, name);
     }
@@ -142,5 +143,25 @@ public class PayrollJwtClaimsResolver {
         }
 
         return userId;
+    }
+
+    private String extractDisplayName(Map<String, Object> claims) {
+        Object name = claims.get(NAME_CLAIM);
+        if (name == null) {
+            name = claims.get(NAMA_CLAIM);
+        }
+        if (name == null) {
+            name = claims.get("username");
+        }
+        return name == null ? null : String.valueOf(name);
+    }
+
+    private boolean isKnownMysawitRole(String role) {
+        return role != null
+                && (role.equals("WORKER")
+                || role.equals("BURUH")
+                || role.equals("MANDOR")
+                || role.equals("SUPIR")
+                || role.equals("ADMIN"));
     }
 }

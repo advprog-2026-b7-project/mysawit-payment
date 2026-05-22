@@ -9,15 +9,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PayrollJobQueue {
     private static final String STATUS_PENDING = "PENDING";
-    private static final String STATUS_PROCESSING = "PROCESSING";
-    private static final String STATUS_SUCCESS = "SUCCESS";
-    private static final String STATUS_FAILED = "FAILED";
+    private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final Logger logger = LoggerFactory.getLogger(PayrollJobQueue.class);
 
     private final PayrollRepository payrollRepository;
@@ -42,23 +41,22 @@ public class PayrollJobQueue {
         }
 
         try {
-            payroll.setStatus(STATUS_PROCESSING);
-            payrollRepository.save(payroll);
-
+            BigDecimal amount = payroll.getAmount();
             boolean success = paymentGateway.processPayment(
-                    payroll.getAmount().doubleValue(), "ACC-" + payroll.getWorkerId()
+                amount != null ? amount.doubleValue() : 0.0,
+                "ACC-" + payroll.getWorkerId()
             );
 
-            payroll.setStatus(success ? STATUS_SUCCESS : STATUS_FAILED);
-            payrollRepository.save(payroll);
+            if (success) {
+                payroll.setStatus(STATUS_ACCEPTED);
+                payrollRepository.save(payroll);
+            }
 
             logger.info("[ASYNC] Payroll {} completed with status: {}",
                     payrollId, payroll.getStatus());
 
         } catch (Exception e) {
             logger.error("[ASYNC] Error processing payroll {}: {}", payrollId, e.getMessage());
-            payroll.setStatus(STATUS_FAILED);
-            payrollRepository.save(payroll);
         }
     }
 }

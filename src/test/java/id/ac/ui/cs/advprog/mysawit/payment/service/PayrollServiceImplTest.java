@@ -82,6 +82,8 @@ class PayrollServiceImplTest {
 
         when(payrollRepository.findById(payrollId))
                 .thenReturn(Optional.of(payroll));
+        when(paymentGateway.processPayment(anyDouble(), anyString()))
+                .thenReturn(true);
         when(payrollRepository.save(any(Payroll.class)))
                 .thenReturn(payroll);
 
@@ -89,6 +91,7 @@ class PayrollServiceImplTest {
 
         assertEquals("ACCEPTED", result.getStatus());
         assertNotNull(result.getApprovedAt());
+        verify(paymentGateway, times(1)).processPayment(anyDouble(), anyString());
         verify(payrollRepository, times(1)).save(any(Payroll.class));
     }
 
@@ -222,8 +225,8 @@ class PayrollJobQueueTest {
 
         payrollJobQueue.processPayrollAsync(id);
 
-        assertEquals("SUCCESS", payroll.getStatus());
-        verify(payrollRepository, times(2)).save(payroll); // PROCESSING lalu SUCCESS
+        assertEquals("ACCEPTED", payroll.getStatus());
+        verify(payrollRepository, times(1)).save(payroll);
     }
 
     @Test
@@ -240,7 +243,7 @@ class PayrollJobQueueTest {
 
         payrollJobQueue.processPayrollAsync(id);
 
-        assertEquals("FAILED", payroll.getStatus());
+        assertEquals("PENDING", payroll.getStatus());
     }
 
     @Test
@@ -258,7 +261,7 @@ class PayrollJobQueueTest {
         UUID id = UUID.randomUUID();
         Payroll payroll = new Payroll();
         payroll.setId(id);
-        payroll.setStatus("SUCCESS"); // bukan PENDING
+        payroll.setStatus("ACCEPTED"); // bukan PENDING
 
         when(payrollRepository.findById(id)).thenReturn(Optional.of(payroll));
 

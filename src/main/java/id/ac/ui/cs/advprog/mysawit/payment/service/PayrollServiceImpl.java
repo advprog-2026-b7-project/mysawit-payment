@@ -24,10 +24,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PayrollServiceImpl implements PayrollService {
     private static final String STATUS_PENDING = "PENDING";
-    private static final String STATUS_SUCCESS = "SUCCESS";
-    private static final String STATUS_FAILED = "FAILED";
+    private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final String STATUS_REJECTED = "REJECTED";
-    private static final String STATUS_PROCESSING = "PROCESSING";
     private final PayrollRepository payrollRepository;
     private final PaymentGateway paymentGateway;
     private final PayrollJobQueue payrollJobQueue;
@@ -41,14 +39,18 @@ public class PayrollServiceImpl implements PayrollService {
     @Transactional
     public void createPayrollFromHarvestApproval(
             HarvestPayrollRequest request) {
+        String referenceId = buildReference("HARVEST", request.getHarvestId(), request.getBuruhId());
+        if (payrollRepository.existsByReferenceId(referenceId)) {
+            throw new RuntimeException("Payroll already exists for harvest: " + request.getHarvestId());
+        }
         Payroll payroll = new Payroll();
         payroll.setWorkerId(request.getBuruhId());
         payroll.setWorkerName(request.getBuruhName());
         payroll.setAmount(request.getAmount());
-        payroll.setReferenceId(request.getHarvestId());
+        payroll.setReferenceId(referenceId);
         payroll.setPayrollType("HARVEST");
         payroll.setDescription(request.getDescription());
-        payroll.setStatus("PENDING");
+        payroll.setStatus(STATUS_PENDING);
 
         payrollRepository.save(payroll);
     }
@@ -57,30 +59,50 @@ public class PayrollServiceImpl implements PayrollService {
     @Transactional
     public void createPayrollFromDeliveryApproval(
             DeliveryPayrollRequest request) {
-        Payroll driverPayroll = new Payroll();
-        driverPayroll.setWorkerId(request.getDriverId());
-        driverPayroll.setWorkerName(request.getDriverName());
-        driverPayroll.setAmount(request.getDriverAmount());
-        driverPayroll.setReferenceId(request.getDeliveryId());
-        driverPayroll.setPayrollType("DELIVERY");
-        driverPayroll.setDescription(request.getDriverDescription());
-        driverPayroll.setStatus("PENDING");
+        boolean createdAny = false;
+        if (isNotBlank(request.getDriverId()) && request.getDriverAmount() != null) {
+            String driverReferenceId = buildReference(
+                    "DELIVERY_DRIVER", request.getDeliveryId(), request.getDriverId());
+            if (!payrollRepository.existsByReferenceId(driverReferenceId)) {
+                Payroll driverPayroll = new Payroll();
+                driverPayroll.setWorkerId(request.getDriverId());
+                driverPayroll.setWorkerName(request.getDriverName());
+                driverPayroll.setAmount(request.getDriverAmount());
+                driverPayroll.setReferenceId(driverReferenceId);
+                driverPayroll.setPayrollType("DELIVERY_DRIVER");
+                driverPayroll.setDescription(request.getDriverDescription());
+                driverPayroll.setStatus(STATUS_PENDING);
+                payrollRepository.save(driverPayroll);
+                createdAny = true;
+            }
+        }
 
-        payrollRepository.save(driverPayroll);
-
-        if (request.getMandorId() != null 
-                && !request.getMandorId().trim().isEmpty()) {
+        if (isNotBlank(request.getMandorId()) && request.getMandorAmount() != null) {
+            String mandorReferenceId = buildReference(
+                    "DELIVERY_MANDOR", request.getDeliveryId(), request.getMandorId());
+            if (payrollRepository.existsByReferenceId(mandorReferenceId)) {
+                if (!createdAny) {
+                    throw new RuntimeException(
+                            "Payroll already exists for delivery: " + request.getDeliveryId());
+                }
+                return;
+            }
             Payroll mandorPayroll = new Payroll();
             mandorPayroll.setWorkerId(request.getMandorId());
             mandorPayroll.setWorkerName(request.getMandorName());
             mandorPayroll.setAmount(request.getMandorAmount());
-            mandorPayroll.setReferenceId(request.getDeliveryId());
-            mandorPayroll.setPayrollType("DELIVERY");
+            mandorPayroll.setReferenceId(mandorReferenceId);
+            mandorPayroll.setPayrollType("DELIVERY_MANDOR");
             mandorPayroll.setDescription(
                     request.getMandorDescription());
-            mandorPayroll.setStatus("PENDING");
+            mandorPayroll.setStatus(STATUS_PENDING);
 
             payrollRepository.save(mandorPayroll);
+            createdAny = true;
+        }
+
+        if (!createdAny) {
+            throw new RuntimeException("No payable delivery recipient was provided");
         }
     }
 
@@ -91,12 +113,20 @@ public class PayrollServiceImpl implements PayrollService {
                 .orElseThrow(() -> new RuntimeException(
                         "Payroll not found: " + payrollId));
 
-        if (!payroll.getStatus().equals("PENDING")) {
+        if (!payroll.getStatus().equals(STATUS_PENDING)) {
             throw new RuntimeException(
                     "Payroll status must be PENDING to accept");
         }
 
-        payroll.setStatus("ACCEPTED");
+        boolean paymentSuccess = paymentGateway.processPayment(
+                payroll.getAmount() != null ? payroll.getAmount().doubleValue() : 0.0,
+                "ACC-" + payroll.getWorkerId()
+        );
+        if (!paymentSuccess) {
+            throw new RuntimeException("Payment gateway failed to process payroll");
+        }
+
+        payroll.setStatus(STATUS_ACCEPTED);
         payroll.setApprovedAt(LocalDateTime.now());
         return payrollRepository.save(payroll);
     }
@@ -108,15 +138,19 @@ public class PayrollServiceImpl implements PayrollService {
                 .orElseThrow(() -> new RuntimeException(
                         "Payroll not found: " + payrollId));
 
-        if (!payroll.getStatus().equals("PENDING")) {
+        if (!payroll.getStatus().equals(STATUS_PENDING)) {
             throw new RuntimeException(
                     "Payroll status must be PENDING to reject");
         }
 
-        payroll.setStatus("REJECTED");
+        payroll.setStatus(STATUS_REJECTED);
         payroll.setRejectionReason(reason);
         payroll.setApprovedAt(LocalDateTime.now());
         return payrollRepository.save(payroll);
+    }
+
+    private String buildReference(String prefix, String sourceId, String workerId) {
+        return prefix + ":" + sourceId + ":" + workerId;
     }
 
     @Override
@@ -142,6 +176,10 @@ public class PayrollServiceImpl implements PayrollService {
 
     private boolean isNotEmpty(String value) {
         return value != null && !value.isEmpty();
+    }
+
+    private boolean isNotBlank(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     private Page<Payroll> findWithSingleFilter(LocalDate tanggal, String status,

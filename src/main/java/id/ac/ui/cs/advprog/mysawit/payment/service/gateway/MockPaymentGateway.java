@@ -12,6 +12,11 @@ public class MockPaymentGateway implements PaymentGateway {
     @Override
     public boolean processPayment(Double amount, String destinationAccount) {
         logger.info("Mock Gateway: Processing Rp{} to {}", amount, destinationAccount);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         return true;
     }
 }
