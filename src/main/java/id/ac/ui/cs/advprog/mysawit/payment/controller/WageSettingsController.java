@@ -7,11 +7,12 @@ import id.ac.ui.cs.advprog.mysawit.payment.service.WageSettingsService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payment/wage-settings")
-@CrossOrigin(origins = "http://localhost:3000")
+@Validated
 public class WageSettingsController {
 
     @Autowired
