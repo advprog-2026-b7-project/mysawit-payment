@@ -22,9 +22,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payroll")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH,
-                RequestMethod.OPTIONS})
 public class PayrollController {
 
     @Autowired
