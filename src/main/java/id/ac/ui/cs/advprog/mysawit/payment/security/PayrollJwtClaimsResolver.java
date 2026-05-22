@@ -24,16 +24,13 @@ public class PayrollJwtClaimsResolver {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    /**
-     * Resolve claims for worker submission (WORKER role only)
-     */
     public PayrollSubmissionContext resolve(String authorizationHeader) {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
-        
-        if (role == null || (!role.equals("WORKER") && !role.equals("BURUH"))) {
+
+        if (role == null || (!role.equals("MANDOR") && !role.equals("ADMIN"))) {
             throw new PayrollAuthorizationException(
-                    "Only WORKER role can submit payroll");
+                    "User role is not authorized to create payroll");
         }
 
         String workerId = extractUserId(claims);
@@ -42,9 +39,6 @@ public class PayrollJwtClaimsResolver {
         return new PayrollSubmissionContext(workerId, workerName, role);
     }
 
-    /**
-     * Resolve claims for payroll approval (ADMIN role only)
-     */
     public PayrollApprovalContext resolveApprover(String authorizationHeader) {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
@@ -60,15 +54,11 @@ public class PayrollJwtClaimsResolver {
         return new PayrollApprovalContext(userId, role, name);
     }
 
-    /**
-     * Resolve claims for payroll viewing (WORKER, ADMIN roles allowed)
-     */
     public PayrollViewerContext resolveViewer(String authorizationHeader) {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
-        
-        if (role == null || (!role.equals("WORKER") && !role.equals("ADMIN") 
-                && !role.equals("BURUH") && !role.equals("MANDOR"))) {
+
+        if (role == null || role.isBlank()) {
             throw new PayrollAuthorizationException(
                     "User role is not authorized to view payroll");
         }
@@ -77,9 +67,6 @@ public class PayrollJwtClaimsResolver {
         return new PayrollViewerContext(userId, role);
     }
 
-    /**
-     * Extract Bearer token from Authorization header and parse JWT claims
-     */
     private Map<String, Object> extractAndValidateClaims(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             throw new PayrollAuthenticationException(
@@ -90,9 +77,7 @@ public class PayrollJwtClaimsResolver {
         return parseSignedClaims(token);
     }
 
-    /**
-     * Extract Bearer token from Authorization header
-     */
+
     private String extractBearerToken(String authorizationHeader) {
         if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
             throw new PayrollAuthenticationException(
@@ -101,9 +86,6 @@ public class PayrollJwtClaimsResolver {
         return authorizationHeader.substring(BEARER_PREFIX.length());
     }
 
-    /**
-     * Parse and validate JWT signature
-     */
     private Map<String, Object> parseSignedClaims(String token) {
         try {
             Claims claims = Jwts.parser()
@@ -118,9 +100,6 @@ public class PayrollJwtClaimsResolver {
         }
     }
 
-    /**
-     * Extract user ID from claims, supporting multiple field names for compatibility
-     */
     private String extractUserId(Map<String, Object> claims) {
         String userId = (String) claims.get("sub");
         if (userId == null) {

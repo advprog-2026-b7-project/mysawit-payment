@@ -22,6 +22,9 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payroll")
+@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*",
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH,
+                RequestMethod.OPTIONS})
 public class PayrollController {
 
     @Autowired
@@ -37,8 +40,6 @@ public class PayrollController {
             @RequestParam(required = false) String workerId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @PageableDefault(size = 20) Pageable pageable) {
-        
-        // Validate JWT token and user role
         claimsResolver.resolveViewer(authorization);
         
         LocalDate filterDate = (tanggal != null && !tanggal.isEmpty()) 
@@ -57,7 +58,6 @@ public class PayrollController {
                     @PathVariable String payrollType,
                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                     @PageableDefault(size = 20) Pageable pageable) {
-        // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
         Page<Payroll> payrolls = payrollService.findByPayrollType(payrollType, pageable);
@@ -70,7 +70,6 @@ public class PayrollController {
                     @PathVariable String workerId,
                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                     @PageableDefault(size = 20) Pageable pageable) {
-        // Validate JWT token
         claimsResolver.resolveViewer(authorization);
         
         Page<Payroll> payrolls = payrollService.findByWorkerId(workerId, pageable);
@@ -81,7 +80,6 @@ public class PayrollController {
     public ResponseEntity<ApiSuccessResponse<Payroll>> approvePayroll(
             @PathVariable UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
-        // Validate JWT token and approver role (ADMIN only)
         claimsResolver.resolveApprover(authorization);
 
         Payroll payroll = payrollService.acceptPayroll(id);
@@ -93,7 +91,6 @@ public class PayrollController {
             @PathVariable UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody PayrollRejectRequest request) {
-        // Validate JWT token and approver role (ADMIN only)
         claimsResolver.resolveApprover(authorization);
 
         if (request.getReason() == null || request.getReason().trim().isEmpty()) {
@@ -108,7 +105,6 @@ public class PayrollController {
     public ResponseEntity<ApiSuccessResponse<String>> createPayrollFromHarvest(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody HarvestPayrollRequest request) {
-        // Validate JWT token (worker/buruh can create payroll)
         claimsResolver.resolve(authorization);
         
         payrollService.createPayrollFromHarvestApproval(request);
@@ -121,7 +117,6 @@ public class PayrollController {
     public ResponseEntity<ApiSuccessResponse<String>> createPayrollFromDelivery(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody DeliveryPayrollRequest request) {
-        // Validate JWT token (worker/buruh can create payroll)
         claimsResolver.resolve(authorization);
         
         payrollService.createPayrollFromDeliveryApproval(request);
