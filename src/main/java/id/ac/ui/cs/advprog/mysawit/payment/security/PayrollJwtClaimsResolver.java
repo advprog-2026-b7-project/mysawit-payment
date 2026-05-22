@@ -28,7 +28,8 @@ public class PayrollJwtClaimsResolver {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
 
-        if (role == null || (!role.equals("MANDOR") && !role.equals("ADMIN"))) {
+        if (role == null || (!role.equalsIgnoreCase("MANDOR") && 
+        !role.equalsIgnoreCase("ADMIN"))) {
             throw new PayrollAuthorizationException(
                     "User role is not authorized to create payroll");
         }
@@ -43,7 +44,7 @@ public class PayrollJwtClaimsResolver {
         Map<String, Object> claims = extractAndValidateClaims(authorizationHeader);
         String role = (String) claims.get(ROLE_CLAIM);
         
-        if (role == null || !role.equals("ADMIN")) {
+        if (role == null || !role.equalsIgnoreCase("ADMIN")) {
             throw new PayrollAuthorizationException(
                     "Only ADMIN role can approve payroll");
         }
